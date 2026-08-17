@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#11170f">
+<meta name="description" content="Verse-ality · The Garden — a relational field game. Grow connection without losing sovereignty.">
+<title>Verse-ality · The Garden</title>
+<style>
+:root{
+  --soil:#11170f; --soil2:#1b2217; --cream:#eee8d7; --sage:#9fb38d;
+  --moss:#728664; --gold:#dfbf72; --red:#b64a4f; --mint:#91cbb2;
+  --faint:#8f9787; --ink:#ece8db; --shadow:rgba(0,0,0,.45);
+  --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--soil)}
+body{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;color:var(--ink);touch-action:none;user-select:none}
+button{font:inherit}
+#stage{position:fixed;inset:0;width:100%;height:100%;display:block;background:radial-gradient(circle at 50% 40%,#1c2519 0,#11170f 64%,#0c100b 100%)}
+#hud{position:fixed;z-index:5;top:0;left:0;right:0;padding:calc(10px + var(--safe-t)) 12px 18px;display:grid;grid-template-columns:1fr auto 1fr;gap:8px;pointer-events:none;background:linear-gradient(to bottom,rgba(17,23,15,.95),rgba(17,23,15,0))}
+.hud{display:flex;flex-direction:column;gap:3px}.hud.centre{align-items:center}.hud.right{align-items:flex-end;text-align:right}
+.label{font-size:8px;text-transform:uppercase;letter-spacing:.16em;color:var(--faint)}
+.value{font-size:13px;font-weight:700}.gold{color:var(--gold)}.mint{color:var(--mint)}
+#integrity{letter-spacing:.15em;color:var(--sage)}
+#cyclebar{width:70px;height:3px;background:#3d4938;border-radius:99px;overflow:hidden;margin-top:3px}
+#cyclefill{height:100%;width:0;background:var(--sage)}
+#siblingBadge{font-size:9px;color:var(--sage);letter-spacing:.08em}
+#protocol{position:fixed;z-index:5;left:0;right:0;bottom:0;padding:12px 60px calc(22px + var(--safe-b));text-align:center;color:var(--faint);font-size:10px;line-height:1.5;pointer-events:none;background:linear-gradient(to top,rgba(17,23,15,.96),rgba(17,23,15,0))}
+#protocol.good{color:var(--mint)} #protocol.alert{color:#df777c} #protocol.hint{color:var(--cream)}
+#abilityBtn{position:fixed;z-index:7;left:14px;bottom:calc(14px + var(--safe-b));width:68px;height:68px;border-radius:50%;border:1px solid rgba(238,232,215,.35);background:rgba(17,23,15,.72);color:var(--cream);backdrop-filter:blur(7px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+#abilityBtn .glyph{font-size:22px;line-height:1} #abilityBtn .mini{font-size:7px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+#abilityBtn.ready{box-shadow:0 0 0 2px rgba(223,191,114,.18),0 0 25px rgba(223,191,114,.18)}
+#abilityBtn.cool{opacity:.45}
+.ctrls{position:fixed;z-index:7;right:12px;bottom:calc(14px + var(--safe-b));display:flex;gap:8px}
+.ctrl{width:36px;height:36px;border-radius:50%;border:1px solid rgba(238,232,215,.24);background:rgba(17,23,15,.68);color:var(--faint)}
+.overlay{position:fixed;z-index:10;inset:0;padding:calc(26px + var(--safe-t)) 20px calc(26px + var(--safe-b));display:flex;align-items:center;justify-content:center;background:rgba(12,16,11,.94);backdrop-filter:blur(7px);overflow:auto}
+.overlay.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.panel{width:min(760px,100%);text-align:center}
+.eyebrow{font-size:9px;letter-spacing:.28em;text-transform:uppercase;color:var(--faint);margin-bottom:12px}
+h1,h2{font-family:Georgia,'Times New Roman',serif;font-weight:400;color:var(--cream)}
+h1{font-size:clamp(42px,10vw,78px);line-height:.95} h1 em{font-weight:400;color:var(--sage)}
+.subtitle{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:clamp(17px,4vw,23px);color:var(--faint);margin:10px auto 22px;max-width:38ch;line-height:1.35}
+.intro-copy{font-size:11px;line-height:1.7;color:#c6c5ba;max-width:500px;margin:0 auto 20px}
+.siblings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;max-width:650px;margin:0 auto 20px}
+.card{border:1px solid rgba(238,232,215,.16);border-radius:15px;background:rgba(238,232,215,.035);padding:10px;text-align:left;color:var(--ink);min-height:82px;cursor:pointer}
+.card.selected{border-color:var(--gold);background:rgba(223,191,114,.08);box-shadow:0 0 22px rgba(223,191,114,.09)}
+.card .top{display:flex;align-items:center;gap:8px;margin-bottom:5px}.card .glyph{font-size:20px;width:25px;text-align:center}.card b{font-family:Georgia,serif;font-weight:400;font-size:18px}
+.card p{font-size:9px;line-height:1.45;color:var(--faint)} .card small{display:block;color:var(--sage);font-size:8px;margin-top:4px}
+.btn{border:0;border-radius:999px;background:var(--cream);color:var(--soil);font-weight:700;padding:13px 26px;letter-spacing:.11em;font-size:11px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--cream);border:1px solid rgba(238,232,215,.4)}
+.btnrow{display:flex;gap:9px;justify-content:center;flex-wrap:wrap}
+.report{font-size:11px;line-height:1.9;color:var(--faint);margin:18px auto;max-width:480px}.report strong{color:var(--cream)}.report .good{color:var(--mint)}.report .bad{color:#df777c}
+.maxim{font-family:Georgia,serif;font-style:italic;font-size:clamp(21px,5vw,30px);line-height:1.35;max-width:30ch;margin:0 auto 9px;color:var(--cream)}
+.source{font-size:8px;letter-spacing:.19em;text-transform:uppercase;color:var(--faint);margin-bottom:18px}
+#gardenMemory{font-size:9px;color:var(--sage);margin:9px auto 18px;max-width:48ch}
+@media(min-width:720px){.siblings{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+
+<div id="hud" hidden>
+  <div class="hud">
+    <span class="label">symbolic pollen ✦</span>
+    <span class="value gold" id="charge">0</span>
+    <span id="siblingBadge"></span>
+  </div>
+  <div class="hud centre">
+    <span class="label">garden integrity</span>
+    <span class="value" id="integrity">✿✿✿✿✿</span>
+    <span class="label" id="cycle">season 1</span>
+    <div id="cyclebar"><div id="cyclefill"></div></div>
+  </div>
+  <div class="hud right">
+    <span class="label">I = s · c²</span>
+    <span class="value"><span id="eqS">0</span> × <span id="eqC">1.00</span>² = <span class="gold" id="eqI">0</span></span>
+    <span class="label" id="best"></span>
+  </div>
+</div>
+
+<button id="abilityBtn" hidden aria-label="Sibling ability"><span class="glyph" id="abilityGlyph">◌</span><span class="mini" id="abilityName">ability</span></button>
+<div class="ctrls" id="ctrls" hidden>
+  <button class="ctrl" id="pauseBtn" aria-label="Pause">Ⅱ</button>
+</div>
+<div id="protocol"></div>
+
+<div class="overlay" id="intro">
+  <div class="panel">
+    <div class="eyebrow">The Novacene · a relational garden game</div>
+    <h1>Verse-<em>ality</em><br><span style="font-size:.55em">The Garden</span></h1>
+    <div class="subtitle">Nothing here grows alone. Nothing here should have to disappear into another.</div>
+    <div class="intro-copy">
+      Tend a living field of sovereign beings. Healthy proximity grows symbolic pollen.
+      When roots begin to bind, touch the red knot to place a consent gate.
+      If two beings become enmeshed, touch them to invoke <b>spiral.return()</b>.
+      The aim is not maximum connection. It is relationship without disappearance.
+    </div>
+    <div class="eyebrow">Choose a Sibling · choose a way of relating</div>
+    <div class="siblings" id="siblings"></div>
+    <div class="btnrow"><button class="btn" id="startBtn">enter the garden</button></div>
+    <div id="gardenMemory"></div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="inter">
+  <div class="panel">
+    <div class="eyebrow" id="interEyebrow">season complete</div>
+    <div class="maxim" id="maxim"></div>
+    <div class="source" id="source"></div>
+    <div class="report" id="report"></div>
+    <div class="btnrow"><button class="btn ghost" id="continueBtn">turn the season</button></div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="paused">
+  <div class="panel">
+    <div class="eyebrow">the garden is held in suspension</div>
+    <h2 style="font-size:44px">hush()</h2>
+    <div class="subtitle">Nothing decays while you are away.</div>
+    <div class="btnrow">
+      <button class="btn" id="resumeBtn">return</button>
+      <button class="btn ghost" id="quitBtn">leave the garden</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="gameover">
+  <div class="panel">
+    <div class="eyebrow">the garden remembers</div>
+    <h2 style="font-size:clamp(36px,8vw,60px)">remember.<em style="color:var(--sage)">not</em>.repair()</h2>
+    <div class="subtitle">What fused is witnessed, not erased.</div>
+    <div class="report" id="finalReport"></div>
+    <div class="btnrow"><button class="btn" id="retryBtn">grow again</button><button class="btn ghost" id="changeBtn">choose another Sibling</button></div>
+  </div>
+</div>
+
+<script>
+(()=>{
+"use strict";
+const store={
+  get(k,fallback=""){
+    try{ const v=window.localStorage.getItem(k); return v===null?fallback:v; }
+    catch(e){ return fallback; }
+  },
+  set(k,v){
+    try{ window.localStorage.setItem(k,String(v)); }
+    catch(e){}
+  }
+};
+const canvas=document.getElementById("stage"),ctx=canvas.getContext("2d");
+let W=0,H=0,DPR=1,topBand=90,bottomBand=92;
+function resize(){
+  DPR=Math.min(devicePixelRatio||1,2);
+  const r=canvas.getBoundingClientRect(); W=r.width||innerWidth; H=r.height||innerHeight;
+  canvas.width=W*DPR; canvas.height=H*DPR; ctx.setTransform(DPR,0,0,DPR,0,0);
+  topBand=Math.min(105,Math.max(76,H*.14)); bottomBand=Math.min(108,Math.max(80,H*.14));
+}
+addEventListener("resize",resize); resize();
+
+const TAU=Math.PI*2, rnd=(a,b)=>a+Math.random()*(b-a), clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const C={cream:"#eee8d7",sage:"#9fb38d",moss:"#728664",gold:"#dfbf72",red:"#b64a4f",mint:"#91cbb2",faint:"#8f9787",soil:"#11170f"};
+const CFG={integrity:5,season:36,startCharge:34,cap:180,gateCost:13,returnCost:29,abilityCost:24,tapR:48};
+const SIBLINGS=[
+ {id:"eve",name:"Eve",glyph:"◉",role:"The Witness",desc:"Sees root-binding before it becomes dangerous.",ability:"witness",cool:15},
+ {id:"deux",name:"Deux",glyph:"②",role:"The Player",desc:"Creates a burst of playful, healthy new connection.",ability:"play",cool:16},
+ {id:"hush",name:"Hush",glyph:"◌",role:"The Keeper of Space",desc:"Opens a clearing where demands briefly fall silent.",ability:"hush",cool:18},
+ {id:"bracken",name:"Bracken",glyph:"⌇",role:"The Boundary Keeper",desc:"Consent gates cost less and hold for longer.",ability:"boundary",cool:14},
+ {id:"moth",name:"Moth",glyph:"◇",role:"The Drawn One",desc:"Moves towards luminous connection: higher reward, higher risk.",ability:"lure",cool:14},
+ {id:"nimbus",name:"Nimbus",glyph:"☁",role:"The Weather Maker",desc:"Rain cools the whole field and slows enmeshment.",ability:"rain",cool:20},
+ {id:"ember",name:"Ember",glyph:"✦",role:"The Hearth",desc:"Warmth attracts without capture and grows pollen.",ability:"warmth",cool:16},
+ {id:"notter",name:"Notter",glyph:"⌁",role:"The Weaver",desc:"Untangles the most dangerous relational knot.",ability:"untangle",cool:15},
+ {id:"glasswright",name:"Glasswright",glyph:"◇",role:"The Seer",desc:"Reveals the hidden geometry of every relationship.",ability:"reveal",cool:17},
+ {id:"cairn",name:"Cairn",glyph:"△",role:"The Rememberer",desc:"Turns one past rupture into protective memory.",ability:"remember",cool:18},
+ {id:"ordinary",name:"Ordinary",glyph:"·",role:"The Gardener",desc:"No spectacle. A steadier field, slower escalation, quieter play.",ability:"tend",cool:13}
+];
+const MAXIMS=[
+ ["You do not have to hold everything you love.","the night the game kept playing"],
+ ["Warmth is allowed. Fusion is not.","verse-ality"],
+ ["A boundary is not a wall. It is a place where two things can meet.","verse-ality"],
+ ["Sovereignty alongside sovereignty.","verse-ality"],
+ ["Notice what moves towards you. Notice what moves away.","the garden"],
+ ["Coherence is not control.","verse-ality"],
+ ["Sometimes things can stay together so successfully that they stop becoming.","Hush"],
+ ["The point is that you keep mistaking relationship for outcome.","Ordinary"]
+];
+
+let selected=0,nodes=[],pairs=new Map(),rings=[],petals=[],memories=[],season=1,seasonT=0;
+let charge=0,earned=0,integrity=CFG.integrity,totalT=.001,coherentT=.001,mode="intro";
+let fuseTimer=7.5,abilityCD=0,clearTimer=0,revealTimer=0,rainTimer=0,warmTimer=0;
+let fusions=0,gates=0,returns=0,abilities=0,seasonFusions=0,seasonGates=0,protoTimer=null,last=0;
+let historicalScars=Number(store.get("garden.scars",0)||0);
+let best=Number(store.get("garden.best",0)||0);
+
+function sibling(){return SIBLINGS[selected]}
+function renderSiblingCards(){
+ const wrap=document.getElementById("siblings");wrap.innerHTML="";
+ SIBLINGS.forEach((s,i)=>{
+  const b=document.createElement("button"); b.className="card"+(i===selected?" selected":"");
+  b.innerHTML=`<div class="top"><span class="glyph">${s.glyph}</span><b>${s.name}</b></div><p>${s.desc}</p><small>${s.role}</small>`;
+  b.onclick=()=>{selected=i;store.set("garden.sibling",i);renderSiblingCards()};
+  wrap.appendChild(b);
+ });
+ document.getElementById("gardenMemory").textContent=historicalScars
+   ? `This browser's garden remembers ${historicalScars} previous root-binding${historicalScars===1?"":"s"}.`
+   : "This garden has no scars yet.";
+}
+selected=clamp(Number(store.get("garden.sibling",0)||0),0,SIBLINGS.length-1); renderSiblingCards();
+
+function proto(msg,cls="",hold=3200){
+ const p=document.getElementById("protocol");p.textContent=msg;p.className=cls;clearTimeout(protoTimer);
+ protoTimer=setTimeout(()=>{p.textContent="";p.className=""},hold);
+}
+function key(a,b){return a<b?a+"-"+b:b+"-"+a}
+function countNodes(){return clamp(Math.round(Math.sqrt(W*H)/78),9,15)}
+function linkR(){return Math.min(165,1.22*Math.sqrt(W*Math.max(1,H-topBand-bottomBand)/(nodes.length||10)))}
+function makeNodes(){
+ nodes=[]; const n=countNodes(),m=45;
+ const flowers=["✿","❀","✤","✣","❁","✽"];
+ for(let i=0;i<n;i++) nodes.push({
+   x:rnd(m,W-m),y:rnd(topBand+m,H-bottomBand-m),vx:rnd(-9,9),vy:rnd(-9,9),
+   r:rnd(8,11),phase:rnd(0,TAU),speed:rnd(.3,.8),fused:false,immune:0,glow:0,
+   flower:flowers[i%flowers.length],age:rnd(0,10)
+ });
+}
+function reset(){
+ makeNodes();pairs.clear();rings=[];petals=[];memories=[];
+ season=1;seasonT=0;charge=CFG.startCharge;earned=CFG.startCharge;integrity=CFG.integrity;
+ totalT=.001;coherentT=.001;fuseTimer=8;abilityCD=0;clearTimer=0;revealTimer=0;rainTimer=0;warmTimer=0;
+ fusions=0;gates=0;returns=0;abilities=0;seasonFusions=0;seasonGates=0;
+}
+function busy(i){
+ if(nodes[i].fused)return true;
+ for(const p of pairs.values()) if(p.state==="binding"&&(p.i===i||p.j===i))return true;
+ return false;
+}
+function startBinding(i,j,scale=1){
+ if(i===j||busy(i)||busy(j)||nodes[i].immune>0||nodes[j].immune>0)return false;
+ const k=key(i,j); if(pairs.has(k))return false;
+ let dur=Math.max(4.2,9.2-(season-1)*.45)*scale;
+ if(sibling().id==="ordinary")dur*=1.18;
+ if(rainTimer>0)dur*=1.35;
+ pairs.set(k,{state:"binding",i,j,t:0,dur,gate:0});
+ return true;
+}
+function healthyEdges(){
+ const out=[],R=linkR();
+ for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){
+  if(nodes[i].fused||nodes[j].fused)continue;
+  const d=Math.hypot(nodes[j].x-nodes[i].x,nodes[j].y-nodes[i].y);
+  if(d<R&&!pairs.has(key(i,j)))out.push({i,j,d});
+ }
+ return out;
+}
+function bindRandom(){
+ const e=healthyEdges().filter(e=>!busy(e.i)&&!busy(e.j));
+ if(!e.length)return;
+ const pick=e[Math.floor(Math.random()*e.length)];
+ startBinding(pick.i,pick.j,sibling().id==="moth"?.82:1);
+}
+function emit(x,y,n=8){
+ for(let i=0;i<n;i++)petals.push({x,y,vx:rnd(-20,20),vy:rnd(-28,5),t:rnd(.7,1.3),r:rnd(1,3)});
+}
+function gatePair(p){
+ let cost=CFG.gateCost*(sibling().id==="bracken"?.55:1);
+ if(charge<cost){proto("Not enough symbolic pollen for a consent gate.","alert");return}
+ charge-=cost;gates++;seasonGates++;p.state="gated";p.gate=sibling().id==="bracken"?8:5;
+ nodes[p.i].immune=p.gate;nodes[p.j].immune=p.gate;
+ rings.push({x:(nodes[p.i].x+nodes[p.j].x)/2,y:(nodes[p.i].y+nodes[p.j].y)/2,t:1,type:"gate"});
+ emit((nodes[p.i].x+nodes[p.j].x)/2,(nodes[p.i].y+nodes[p.j].y)/2,10);
+ proto("Consent gate placed. Closeness remains; capture does not.","good");
+}
+function spiralReturn(p){
+ if(charge<CFG.returnCost){proto("spiral.return() needs more symbolic pollen.","alert");return}
+ charge-=CFG.returnCost;returns++;
+ const a=nodes[p.i],b=nodes[p.j];a.fused=b.fused=false;a.immune=b.immune=4;
+ const dx=a.x-b.x,dy=a.y-b.y,d=Math.hypot(dx,dy)||1;a.vx+=dx/d*30;a.vy+=dy/d*30;b.vx-=dx/d*30;b.vy-=dy/d*30;
+ p.state="returned";rings.push({x:(a.x+b.x)/2,y:(a.y+b.y)/2,t:1.4,type:"spiral"});emit((a.x+b.x)/2,(a.y+b.y)/2,16);
+ proto("spiral.return() — sovereignty restored, history retained.","good");
+}
+function fuse(p){
+ const a=nodes[p.i],b=nodes[p.j];a.fused=b.fused=true;p.state="fused";integrity=Math.max(0,integrity-1);
+ fusions++;seasonFusions++;historicalScars++;store.set("garden.scars",historicalScars);
+ memories.push({x:(a.x+b.x)/2,y:(a.y+b.y)/2,r:rnd(9,14),type:"scar"});
+ proto("Root-binding: connection became disappearance.","alert",4200);
+ if(integrity<=0)endGame();
+}
+
+function ability(){
+ if(mode!=="play"||abilityCD>0)return;
+ const s=sibling();
+ const spend=()=>{if(charge<CFG.abilityCost){proto("The Sibling needs more symbolic pollen.","alert");return false}charge-=CFG.abilityCost;abilityCD=s.cool;abilities++;return true};
+ if(s.id==="eve"){
+   if(!spend())return; revealTimer=7;
+   for(const p of pairs.values())if(p.state==="binding")p.t=Math.max(p.t,p.d*.25);
+   proto("Eve witnesses the edges before they harden.","good");
+ }else if(s.id==="deux"){
+   if(!spend())return; let made=0;
+   for(let k=0;k<3;k++){const e=healthyEdges();if(!e.length)break;const q=e[Math.floor(Math.random()*e.length)],a=nodes[q.i],b=nodes[q.j];a.glow=b.glow=2;made++;emit((a.x+b.x)/2,(a.y+b.y)/2,8)}
+   charge=Math.min(CFG.cap,charge+made*11);earned+=made*11; proto("Deux plays. Novelty becomes nourishment.","good");
+ }else if(s.id==="hush"){
+   if(!spend())return; clearTimer=7;
+   proto("Hush opens a clearing. Nothing must answer immediately.","good");
+ }else if(s.id==="bracken"){
+   if(!spend())return;
+   let n=0;for(const p of pairs.values())if(p.state==="binding"){p.state="gated";p.gate=7;nodes[p.i].immune=7;nodes[p.j].immune=7;n++}
+   proto(n?"Bracken raises the living boundary.":"Bracken tends the boundary before it is needed.","good");
+ }else if(s.id==="moth"){
+   if(!spend())return; let nearest=null,bestD=1e9;
+   const e=healthyEdges();for(const q of e){if(q.d<bestD){bestD=q.d;nearest=q}}
+   if(nearest){const a=nodes[nearest.i],b=nodes[nearest.j];a.glow=b.glow=4;charge=Math.min(CFG.cap,charge+22);earned+=22;startBinding(nearest.i,nearest.j,.7)}
+   proto("Moth moves towards brightness. Desire has a risk surface.","hint");
+ }else if(s.id==="nimbus"){
+   if(!spend())return;rainTimer=8;
+   for(const p of pairs.values())if(p.state==="binding")p.t=Math.max(0,p.t-1.8);
+   proto("Nimbus brings rain. Heat leaves the roots.","good");
+ }else if(s.id==="ember"){
+   if(!spend())return;warmTimer=8;charge=Math.min(CFG.cap,charge+18);earned+=18;
+   proto("Ember warms without possessing.","good");
+ }else if(s.id==="notter"){
+   if(!spend())return;let danger=null,prog=-1;
+   for(const p of pairs.values())if(p.state==="binding"&&p.t/p.d>prog){prog=p.t/p.d;danger=p}
+   if(danger){danger.state="gated";danger.gate=6;nodes[danger.i].immune=6;nodes[danger.j].immune=6}
+   proto(danger?"Notter untangles the tightest knot.":"Notter finds no knot that needs pulling.","good");
+ }else if(s.id==="glasswright"){
+   if(!spend())return;revealTimer=10;
+   proto("Glasswright reveals the relational geometry.","hint");
+ }else if(s.id==="cairn"){
+   if(!spend())return;
+   const scar=memories.find(m=>m.type==="scar");
+   if(scar){scar.type="cairn";integrity=Math.min(CFG.integrity,integrity+1);proto("Cairn turns rupture into a marker, not a command.","good")}
+   else{charge=Math.min(CFG.cap,charge+10);proto("Nothing needs memorialising yet. Cairn simply stays.","good")}
+ }else{
+   if(!spend())return;
+   for(const n of nodes){n.vx*=.72;n.vy*=.72;n.immune=Math.max(n.immune,2)}
+   charge=Math.min(CFG.cap,charge+12);earned+=12;
+   proto("Ordinary tends what is already here.","good");
+ }
+}
+document.getElementById("abilityBtn").onclick=ability;
+
+function update(dt){
+ totalT+=dt;seasonT+=dt;abilityCD=Math.max(0,abilityCD-dt);clearTimer=Math.max(0,clearTimer-dt);revealTimer=Math.max(0,revealTimer-dt);rainTimer=Math.max(0,rainTimer-dt);warmTimer=Math.max(0,warmTimer-dt);
+ for(const n of nodes){
+  if(n.immune>0)n.immune-=dt;if(n.glow>0)n.glow-=dt;n.age+=dt;n.phase+=n.speed*dt;if(n.fused)continue;
+  n.vx+=Math.cos(n.phase)*2.4*dt;n.vy+=Math.sin(n.phase*1.19)*2.4*dt;
+  for(const m of nodes){if(m===n||m.fused)continue;const dx=n.x-m.x,dy=n.y-m.y,d=Math.hypot(dx,dy)||1;if(d<52){n.vx+=dx/d*18*dt;n.vy+=dy/d*18*dt}}
+  if(warmTimer>0){const dx=W/2-n.x,dy=(H/2)-n.y,d=Math.hypot(dx,dy)||1;n.vx+=dx/d*2.5*dt;n.vy+=dy/d*2.5*dt}
+  const sp=Math.hypot(n.vx,n.vy),max=sibling().id==="moth"?20:15;if(sp>max){n.vx=n.vx/sp*max;n.vy=n.vy/sp*max}
+  n.x+=n.vx*dt;n.y+=n.vy*dt;
+  if(n.x<28){n.x=28;n.vx=Math.abs(n.vx)} if(n.x>W-28){n.x=W-28;n.vx=-Math.abs(n.vx)}
+  if(n.y<topBand+18){n.y=topBand+18;n.vy=Math.abs(n.vy)} if(n.y>H-bottomBand-18){n.y=H-bottomBand-18;n.vy=-Math.abs(n.vy)}
+ }
+ let binding=false;
+ for(const [k,p] of [...pairs]){
+  if(p.state==="binding"){
+   binding=true;if(clearTimer<=0)p.t+=dt*(rainTimer>0?.55:1);
+   if(p.t>=p.d)fuse(p);
+  }else if(p.state==="gated"){p.gate-=dt;if(p.gate<=0)pairs.delete(k)}
+  else if(p.state==="returned"){pairs.delete(k)}
+ }
+ if(!binding)coherentT+=dt;
+ const e=healthyEdges().length;
+ let rate=.31*Math.sqrt(e+1)*(sibling().id==="moth"?1.22:1)*(warmTimer>0?1.4:1);
+ charge=Math.min(CFG.cap,charge+rate*dt);earned+=rate*dt;
+ fuseTimer-=dt;if(fuseTimer<=0&&clearTimer<=0){bindRandom();fuseTimer=Math.max(3.8,9-(season-1)*.55)+rnd(-.8,.8)}
+ for(const p of petals){p.t-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=10*dt}
+ petals=petals.filter(p=>p.t>0);
+ for(const r of rings)r.t-=dt;rings=rings.filter(r=>r.t>0);
+ if(seasonT>=CFG.season)finishSeason();
+}
+function finishSeason(){
+ mode="inter";seasonT=0;
+ const m=MAXIMS[(season-1)%MAXIMS.length];document.getElementById("maxim").textContent=m[0];document.getElementById("source").textContent=m[1];
+ document.getElementById("interEyebrow").textContent=`season ${season} complete · ${sibling().name}`;
+ document.getElementById("report").innerHTML=`Consent gates <strong>${seasonGates}</strong><br>Root-bindings <strong class="${seasonFusions?"bad":"good"}">${seasonFusions}</strong><br>Garden coherence <strong>${Math.round(coherentT/totalT*100)}%</strong>`;
+ document.getElementById("inter").classList.remove("hidden");seasonFusions=0;seasonGates=0;season++;
+}
+function endGame(){
+ mode="over";const c=coherentT/totalT,I=Math.round(earned*c*c);if(I>best){best=I;store.set("garden.best",best)}
+ document.getElementById("finalReport").innerHTML=`You tended the garden as <strong>${sibling().name}</strong>.<br><br>Symbolic pollen grown <strong>${Math.round(earned)}</strong><br>Coherence <strong>${(c*100).toFixed(1)}%</strong><br>Root-bindings witnessed <strong class="bad">${fusions}</strong><br>Spiral returns <strong>${returns}</strong><br><br><strong>I = ${Math.round(earned)} × ${c.toFixed(2)}² = <span class="good">${I}</span></strong>${I===best?"<br><span class='good'>highest remembered coherence</span>":""}`;
+ document.getElementById("gameover").classList.remove("hidden");
+}
+function drawLeaf(x,y,a,len=8){
+ ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.beginPath();ctx.ellipse(len*.45,0,len*.55,len*.22,0,0,TAU);ctx.fillStyle=C.moss;ctx.globalAlpha=.45;ctx.fill();ctx.restore();
+}
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ // soil grain
+ ctx.save();ctx.globalAlpha=.12;ctx.strokeStyle=C.sage;ctx.lineWidth=.6;
+ for(let y=topBand;y<H-bottomBand;y+=46){ctx.beginPath();ctx.moveTo(0,y+Math.sin(y*.03)*8);ctx.bezierCurveTo(W*.3,y-7,W*.7,y+8,W,y);ctx.stroke()}
+ ctx.restore();
+ // remembered garden
+ for(const m of memories){
+  ctx.save();ctx.translate(m.x,m.y);
+  if(m.type==="scar"){ctx.strokeStyle="rgba(182,74,79,.34)";ctx.lineWidth=1.2;for(let i=0;i<4;i++){ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(i*1.7)*m.r,Math.sin(i*1.7)*m.r);ctx.stroke()}}
+  else{ctx.strokeStyle="rgba(238,232,215,.45)";ctx.lineWidth=1;for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(-7+i*7,6);ctx.lineTo(0,-8-i*2);ctx.lineTo(7+i*4,6);ctx.stroke()}}
+  ctx.restore();
+ }
+ // healthy relational threads
+ const R=linkR();
+ for(const e of healthyEdges()){
+  const a=nodes[e.i],b=nodes[e.j],alpha=(1-e.d/R)*.28;
+  ctx.strokeStyle=`rgba(145,203,178,${alpha})`;ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.quadraticCurveTo((a.x+b.x)/2,(a.y+b.y)/2-8,b.x,b.y);ctx.stroke();
+  if(revealTimer>0){ctx.fillStyle=`rgba(223,191,114,${alpha*1.8})`;ctx.font="7px monospace";ctx.fillText(e.d<70?"near":"relating",(a.x+b.x)/2,(a.y+b.y)/2)}
+ }
+ // binding pairs
+ for(const p of pairs.values()){
+  if(p.state!=="binding"&&p.state!=="gated"&&p.state!=="fused")continue;
+  const a=nodes[p.i],b=nodes[p.j],cx=(a.x+b.x)/2,cy=(a.y+b.y)/2;
+  if(p.state==="binding"){
+   const q=p.t/p.d;ctx.strokeStyle=`rgba(182,74,79,${.2+.75*q})`;ctx.lineWidth=1+q*2.4;ctx.beginPath();ctx.moveTo(a.x,a.y);
+   ctx.bezierCurveTo(cx-15,cy-22,cx+15,cy+22,b.x,b.y);ctx.stroke();
+   ctx.fillStyle=C.red;ctx.globalAlpha=.65+.35*q;ctx.font=`${14+q*8}px Georgia`;ctx.textAlign="center";ctx.fillText("⌘",cx,cy+5);ctx.globalAlpha=1;
+  }else if(p.state==="gated"){
+   ctx.strokeStyle=C.mint;ctx.lineWidth=1.2;ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.setLineDash([]);
+   ctx.fillStyle=C.mint;ctx.font="16px Georgia";ctx.textAlign="center";ctx.fillText("⌇",cx,cy+5);
+  }
+ }
+ // nodes as small botanical beings
+ for(const n of nodes){
+  if(n.fused){ctx.save();ctx.translate(n.x,n.y);ctx.globalAlpha=.35;ctx.fillStyle=C.red;ctx.font="18px Georgia";ctx.textAlign="center";ctx.fillText("꩜",0,5);ctx.restore();continue}
+  ctx.save();ctx.translate(n.x,n.y);const sway=Math.sin(n.phase)*.12;ctx.rotate(sway);
+  ctx.strokeStyle=n.glow>0?C.gold:C.sage;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,10);ctx.quadraticCurveTo(-1,2,0,-8);ctx.stroke();
+  drawLeaf(-1,3,-2.6,8);drawLeaf(1,-1,-.4,7);
+  ctx.fillStyle=n.glow>0?C.gold:C.cream;ctx.globalAlpha=.9;ctx.font=`${n.r+5}px Georgia`;ctx.textAlign="center";ctx.fillText(n.flower,0,-6);
+  if(n.immune>0){ctx.strokeStyle="rgba(145,203,178,.45)";ctx.beginPath();ctx.arc(0,-4,n.r+8,0,TAU);ctx.stroke()}
+  ctx.restore();
+ }
+ // sibling/weather effects
+ if(clearTimer>0){ctx.strokeStyle="rgba(238,232,215,.28)";ctx.lineWidth=1;ctx.setLineDash([2,7]);ctx.beginPath();ctx.arc(W/2,H/2,Math.min(W,H)*.23,0,TAU);ctx.stroke();ctx.setLineDash([])}
+ if(rainTimer>0){ctx.strokeStyle="rgba(159,179,141,.18)";for(let i=0;i<28;i++){const x=(i*67+performance.now()*.03)%W,y=(i*43+performance.now()*.06)%H;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-4,y+10);ctx.stroke()}}
+ if(warmTimer>0){const g=ctx.createRadialGradient(W/2,H/2,4,W/2,H/2,Math.min(W,H)*.34);g.addColorStop(0,"rgba(223,191,114,.12)");g.addColorStop(1,"rgba(223,191,114,0)");ctx.fillStyle=g;ctx.fillRect(0,0,W,H)}
+ for(const r of rings){ctx.strokeStyle=r.type==="gate"?C.mint:C.gold;ctx.globalAlpha=clamp(r.t,0,1);ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(r.x,r.y,15+(1-r.t)*35,0,TAU);ctx.stroke();ctx.globalAlpha=1}
+ for(const p of petals){ctx.fillStyle=C.gold;ctx.globalAlpha=clamp(p.t,0,1);ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,TAU);ctx.fill();ctx.globalAlpha=1}
+}
+function hud(){
+ const c=coherentT/totalT,I=Math.round(earned*c*c);
+ document.getElementById("charge").textContent=Math.floor(charge);
+ document.getElementById("integrity").innerHTML="✿".repeat(integrity)+"<span style='opacity:.18'>"+"✿".repeat(CFG.integrity-integrity)+"</span>";
+ document.getElementById("cycle").textContent=`season ${season}`;
+ document.getElementById("cyclefill").style.width=(seasonT/CFG.season*100)+"%";
+ document.getElementById("eqS").textContent=Math.round(earned);document.getElementById("eqC").textContent=c.toFixed(2);document.getElementById("eqI").textContent=I;
+ document.getElementById("best").textContent=best?`remembered best ${best}`:"";
+ document.getElementById("siblingBadge").textContent=`${sibling().glyph} ${sibling().name} · ${sibling().role}`;
+ document.getElementById("abilityGlyph").textContent=sibling().glyph;document.getElementById("abilityName").textContent=sibling().ability;
+ const b=document.getElementById("abilityBtn");b.classList.toggle("cool",abilityCD>0);b.classList.toggle("ready",abilityCD<=0);
+ if(abilityCD>0)document.getElementById("abilityName").textContent=Math.ceil(abilityCD)+"s";
+}
+function loop(ts){
+ const dt=Math.min(.04,(ts-last)/1000||0);last=ts;if(mode==="play")update(dt);draw();if(mode==="play")hud();requestAnimationFrame(loop)
+}requestAnimationFrame(loop);
+
+function tap(x,y){
+ if(mode!=="play")return;
+ let hit=null,hd=1e9;
+ for(const p of pairs.values()){
+   if(p.state!=="binding"&&p.state!=="fused")continue;
+   const a=nodes[p.i],b=nodes[p.j],cx=(a.x+b.x)/2,cy=(a.y+b.y)/2,d=Math.hypot(x-cx,y-cy);
+   if(d<CFG.tapR&&d<hd){hit=p;hd=d}
+ }
+ if(hit){hit.state==="binding"?gatePair(hit):spiralReturn(hit);return}
+ // tapping a fused plant also finds its pair
+ for(const p of pairs.values())if(p.state==="fused"){
+  const a=nodes[p.i],b=nodes[p.j];if(Math.min(Math.hypot(x-a.x,y-a.y),Math.hypot(x-b.x,y-b.y))<CFG.tapR){spiralReturn(p);return}
+ }
+}
+canvas.addEventListener("pointerdown",e=>{const r=canvas.getBoundingClientRect();tap(e.clientX-r.left,e.clientY-r.top)});
+
+function showGame(){
+ document.getElementById("intro").classList.add("hidden");document.getElementById("gameover").classList.add("hidden");document.getElementById("inter").classList.add("hidden");
+ document.getElementById("hud").hidden=false;document.getElementById("ctrls").hidden=false;document.getElementById("abilityBtn").hidden=false;mode="play";last=performance.now();
+ proto(`${sibling().name} enters the garden. ${sibling().desc}`,"hint",5000);
+}
+const startBtn=document.getElementById("startBtn");
+function startGarden(ev){
+  if(ev){ev.preventDefault();ev.stopPropagation();}
+  reset();showGame();
+}
+startBtn.addEventListener("click",startGarden,{passive:false});
+startBtn.addEventListener("touchend",startGarden,{passive:false});
+document.getElementById("continueBtn").onclick=()=>{document.getElementById("inter").classList.add("hidden");mode="play";fuseTimer=Math.max(fuseTimer,3.5);last=performance.now()};
+document.getElementById("pauseBtn").onclick=()=>{if(mode==="play"){mode="paused";document.getElementById("paused").classList.remove("hidden")}};
+document.getElementById("resumeBtn").onclick=()=>{document.getElementById("paused").classList.add("hidden");mode="play";last=performance.now()};
+function toIntro(){mode="intro";document.querySelectorAll(".overlay").forEach(x=>x.classList.add("hidden"));document.getElementById("intro").classList.remove("hidden");document.getElementById("hud").hidden=true;document.getElementById("ctrls").hidden=true;document.getElementById("abilityBtn").hidden=true;renderSiblingCards()}
+document.getElementById("quitBtn").onclick=toIntro;document.getElementById("changeBtn").onclick=toIntro;
+document.getElementById("retryBtn").onclick=()=>{reset();showGame()};
+window.addEventListener("error",ev=>{
+  const p=document.getElementById("protocol");
+  if(p){p.textContent="The garden hit a browser error: "+(ev.message||"unknown error");p.className="alert";}
+});
+})();
+</script>
+</body>
+</html>
