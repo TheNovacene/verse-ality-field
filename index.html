@@ -2,1109 +2,244 @@
 <html lang="en-GB">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#070A14">
-<meta name="description" content="Verse-ality · The Field — a relational field game. Hold sovereignty. Refuse fusion.">
-<title>Verse-ality · The Field</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0c110b">
+<meta name="description" content="Verse-ality · The Field — a relational field in three movements. Nothing here grows alone. Nothing here should have to disappear into another.">
+<title>Verse-ality · The Field · three movements</title>
 <style>
-  :root{
-    --field:#070A14;
-    --lumen:#A9BDFF;
-    --charge:#E9C46A;
-    --fusion:#FF4D5E;
-    --null:#5CEAD1;
-    --faint:#7C86A8;
-    --ink:#E8ECFA;
-    --safe-t:env(safe-area-inset-top,0px);
-    --safe-b:env(safe-area-inset-bottom,0px);
-  }
-  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{height:100%;overflow:hidden;background:var(--field)}
-  body{font-family:'Space Mono',ui-monospace,monospace;color:var(--ink);
-       touch-action:none;user-select:none;-webkit-user-select:none;overscroll-behavior:none}
-  /* canvas is a replaced element: inset:0 alone leaves it at its intrinsic
-     600×300, so width/height must be stated explicitly */
-  #stage{position:fixed;top:0;left:0;width:100%;height:100%;display:block}
-
-  /* ---------- HUD ---------- */
-  #hud{position:fixed;top:0;left:0;right:0;
-       padding:calc(10px + var(--safe-t)) 12px 10px;
-       display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:start;
-       pointer-events:none;z-index:5;
-       background:linear-gradient(to bottom, rgba(7,10,20,.9), rgba(7,10,20,0));}
-  .hud-block{display:flex;flex-direction:column;gap:3px;min-width:0}
-  .hud-label{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);white-space:nowrap}
-  .hud-value{font-size:14px;font-weight:700;white-space:nowrap}
-  #chargeVal{color:var(--charge)}
-  #chargeVal .cap{color:var(--faint);font-size:10px;font-weight:400}
-  #chargeVal.full{animation:capPulse 1.1s ease-in-out infinite}
-  @keyframes capPulse{50%{opacity:.5}}
-  #streakVal{font-size:9.5px;color:var(--null);letter-spacing:.08em;min-height:12px}
-  #streakVal:empty{min-height:12px}
-  #centreBlock{align-items:center}
-  #integrityVal{color:var(--lumen);letter-spacing:.14em;font-size:14px;line-height:1}
-  #integrityVal .lost{color:#333A55}
-  #integrityVal.hurt{animation:hurt .5s ease-out}
-  @keyframes hurt{0%{transform:scale(1.35)}100%{transform:scale(1)}}
-  #cycleWrap{width:64px;height:3px;background:rgba(124,134,168,.22);border-radius:2px;overflow:hidden;margin-top:2px}
-  #cycleBar{height:100%;width:0;background:var(--lumen);opacity:.65;transition:width .12s linear}
-  #cycleVal{color:var(--faint);font-size:9.5px;letter-spacing:.1em}
-  #equation{text-align:right;align-items:flex-end}
-  #equation .hud-value{color:var(--ink);font-size:11.5px}
-  #equation .iv{color:var(--charge);font-weight:700;font-size:13px}
-  #bestVal{font-size:9px;color:var(--faint);letter-spacing:.08em}
-
-  /* ---------- controls ---------- */
-  #ctrls{position:fixed;z-index:6;right:10px;bottom:calc(10px + var(--safe-b));
-         display:flex;gap:8px;pointer-events:none}
-  .ctrl{pointer-events:auto;cursor:pointer;width:34px;height:34px;border-radius:999px;
-        border:1px solid rgba(124,134,168,.32);background:rgba(7,10,20,.55);
-        color:var(--faint);font-family:inherit;font-size:13px;line-height:1;
-        display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
-  .ctrl:active{transform:scale(.92)}
-  .ctrl[aria-pressed="true"]{color:var(--fusion);border-color:rgba(255,77,94,.4)}
-
-  /* ---------- protocol line ---------- */
-  #protocol{position:fixed;left:0;right:0;bottom:0;
-            padding:10px 18px calc(54px + var(--safe-b));
-            text-align:center;font-size:11px;color:var(--faint);
-            letter-spacing:.05em;pointer-events:none;z-index:5;min-height:46px;
-            line-height:1.5;
-            background:linear-gradient(to top, rgba(7,10,20,.9), rgba(7,10,20,0));
-            transition:color .25s,opacity .25s}
-  #protocol.alert{color:var(--fusion)}
-  #protocol.good{color:var(--null)}
-  #protocol.hint{color:var(--lumen)}
-
-  /* ---------- overlays ---------- */
-  .overlay{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;
-           align-items:center;justify-content:center;text-align:center;
-           padding:calc(28px + var(--safe-t)) 24px calc(28px + var(--safe-b));
-           background:rgba(7,10,20,.94);
-           backdrop-filter:blur(4px);transition:opacity .45s;overflow-y:auto}
-  .overlay.hidden{opacity:0;pointer-events:none;visibility:hidden}
-  .ov-eyebrow{font-size:9.5px;letter-spacing:.28em;text-transform:uppercase;
-              color:var(--faint);margin-bottom:14px}
-  .ov-title{font-family:'Cormorant Garamond',serif;font-weight:500;
-            font-size:clamp(40px,9vw,72px);line-height:1.02;color:var(--ink);
-            margin-bottom:6px}
-  .ov-title em{font-style:italic;color:var(--lumen)}
-  .ov-sub{font-family:'Cormorant Garamond',serif;font-style:italic;
-          font-size:clamp(17px,4vw,22px);color:var(--faint);margin-bottom:24px;
-          max-width:34ch}
-  .ov-rules{max-width:360px;text-align:left;font-size:11.5px;line-height:1.7;
-            color:var(--ink);margin-bottom:24px}
-  .rule{display:grid;grid-template-columns:26px 1fr;gap:8px;margin-bottom:11px;align-items:start}
-  .rule .sig{font-size:15px;text-align:center;line-height:1.3}
-  .rule b{font-weight:700}
-  .rule .cost{color:var(--charge);font-weight:700}
-  .g{color:var(--charge)} .r{color:var(--fusion)}
-  .t{color:var(--null)} .l{color:var(--lumen)} .f{color:var(--faint)}
-  .ov-law{max-width:360px;font-size:11px;line-height:1.7;color:var(--faint);
-          border-top:1px solid rgba(124,134,168,.2);padding-top:14px;margin-bottom:26px}
-  .ov-law b{color:var(--ink)}
-  .btn-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
-  .btn{pointer-events:auto;cursor:pointer;font-family:'Space Mono',ui-monospace,monospace;
-       font-size:13px;letter-spacing:.13em;text-transform:lowercase;
-       color:var(--field);background:var(--lumen);border:none;border-radius:999px;
-       padding:14px 32px;font-weight:700}
-  .btn:active{transform:scale(.97)}
-  .btn.ghost{background:transparent;color:var(--lumen);border:1px solid var(--lumen)}
-  .btn.small{padding:11px 22px;font-size:11.5px}
-  .maxim{font-family:'Cormorant Garamond',serif;font-style:italic;
-         font-size:clamp(18px,4.5vw,24px);color:var(--ink);max-width:30ch;
-         line-height:1.4;margin-bottom:10px}
-  .maxim-src{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;
-             color:var(--faint);margin-bottom:22px}
-  .cycle-report{font-size:11px;color:var(--faint);line-height:2;margin-bottom:24px}
-  .cycle-report .ok{color:var(--null)} .cycle-report .bad{color:var(--fusion)}
-  .final-eq{font-size:15px;color:var(--ink);margin-bottom:10px}
-  .final-eq .iv{color:var(--charge);font-weight:700}
-  .stat-row{font-size:11px;color:var(--faint);margin-bottom:22px;line-height:2}
-  .stat-row .hi{color:var(--charge)}
-  .newbest{color:var(--null);font-size:10.5px;letter-spacing:.2em;
-           text-transform:uppercase;margin-bottom:14px}
-  #credit{position:fixed;bottom:calc(18px + var(--safe-b));left:12px;font-size:8px;
-          color:#39405E;z-index:11;letter-spacing:.08em;pointer-events:none}
-
-  @media (prefers-reduced-motion: reduce){
-    *{animation-duration:.01ms !important;transition-duration:.01ms !important}
-  }
+:root{
+  --soil:#0c110b; --soil2:#151c12; --cream:#eee8d7; --sage:#9fb38d; --moss:#728664;
+  --gold:#dfbf72; --red:#b64a4f; --mint:#91cbb2; --faint:#8f9787; --violet:#9c8bb8;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--soil)}
+body{
+  min-height:100svh;color:var(--cream);
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+  background:radial-gradient(ellipse at 50% -10%,#1a2415 0,#0c110b 55%,#080c07 100%);
+  display:flex;flex-direction:column;align-items:center;
+}
+.night{width:100%;max-width:1060px;position:relative;padding:0 20px}
+#meadow{display:block;width:100%;height:auto}
+header{text-align:center;margin-top:-8px}
+.eyebrow{font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--faint)}
+h1{font-family:Georgia,'Times New Roman',serif;font-weight:400;font-size:clamp(46px,9vw,88px);line-height:1.02;margin:14px 0 4px;letter-spacing:.04em}
+h1 em{font-style:normal;color:var(--sage)}
+.question{
+  font-family:Georgia,serif;font-style:italic;font-size:clamp(17px,3.6vw,24px);
+  color:var(--faint);max-width:34ch;margin:14px auto 0;line-height:1.4;
+}
+.knot{color:var(--red);font-size:18px;margin:18px 0 4px;letter-spacing:.4em}
+main{width:100%;max-width:1060px;padding:34px 20px 10px;display:grid;gap:14px}
+@media(min-width:760px){main{grid-template-columns:repeat(3,1fr)}}
+.movement{
+  display:block;text-decoration:none;color:var(--cream);
+  border:1px solid rgba(238,232,215,.14);border-radius:18px;
+  background:linear-gradient(to bottom,rgba(238,232,215,.045),rgba(238,232,215,.015));
+  padding:22px 20px 18px;transition:border-color .25s,transform .25s,box-shadow .25s;
+}
+.movement:hover,.movement:focus-visible{
+  border-color:rgba(223,191,114,.5);transform:translateY(-3px);
+  box-shadow:0 14px 34px rgba(0,0,0,.4),0 0 30px rgba(223,191,114,.06);outline:none;
+}
+.movement .num{font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold)}
+.movement h2{font-family:Georgia,serif;font-weight:400;font-size:30px;margin:8px 0 2px}
+.movement .mode{font-family:Georgia,serif;font-style:italic;color:var(--sage);font-size:14px;margin-bottom:10px}
+.movement p{font-size:11px;line-height:1.65;color:var(--faint);min-height:73px}
+.movement .eq{
+  margin-top:12px;padding-top:10px;border-top:1px solid rgba(238,232,215,.1);
+  font-size:12px;color:var(--gold);letter-spacing:.06em;
+}
+.movement .play{display:inline-block;margin-top:12px;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--mint)}
+.creed{
+  text-align:center;font-family:Georgia,serif;font-style:italic;color:var(--faint);
+  font-size:clamp(14px,2.8vw,17px);line-height:1.7;margin:30px 20px 8px;
+}
+footer{padding:22px 20px 40px;text-align:center}
+footer .eyebrow{opacity:.85}
+footer a{color:var(--faint)}
+@media(prefers-reduced-motion:no-preference){
+  .pulse{animation:pulse 5.5s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
+  .pulse2{animation:pulse 7s ease-in-out 1.4s infinite}
+  .star{animation:pulse 8s ease-in-out infinite}
+}
 </style>
 </head>
 <body>
 
-<canvas id="stage"></canvas>
+<div class="night">
+<!-- the meadow: luminous beings, fine stems, threads between them (one running red) -->
+<svg id="meadow" viewBox="0 0 1000 300" role="img" aria-label="A night meadow of luminous flowers joined by faint threads, one thread pulling red">
+  <defs>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <radialGradient id="halo" r="50%"><stop offset="0" stop-color="#eee8d7" stop-opacity=".9"/><stop offset="1" stop-color="#eee8d7" stop-opacity="0"/></radialGradient>
+  </defs>
 
-<div id="hud" hidden>
-  <div class="hud-block">
-    <span class="hud-label">symbolic charge 🜂</span>
-    <span class="hud-value" id="chargeVal">0</span>
-    <span id="streakVal"></span>
-  </div>
-  <div class="hud-block" id="centreBlock">
-    <span class="hud-label">field integrity</span>
-    <span class="hud-value" id="integrityVal">✶✶✶✶✶</span>
-    <span id="cycleVal">cycle 1</span>
-    <div id="cycleWrap"><div id="cycleBar"></div></div>
-  </div>
-  <div class="hud-block" id="equation">
-    <span class="hud-label">I = s · c²</span>
-    <span class="hud-value"><span id="eqS">0</span>×<span id="eqC">1.00</span>² = <span class="iv" id="eqI">0</span></span>
-    <span id="bestVal"></span>
-  </div>
+  <!-- stars -->
+  <g fill="#eee8d7">
+    <circle class="star" cx="60" cy="38" r="1.1" opacity=".5"/><circle class="star" cx="180" cy="20" r=".8" opacity=".35"/>
+    <circle class="star" cx="310" cy="52" r="1" opacity=".4"/><circle class="star" cx="500" cy="16" r="1.2" opacity=".5"/>
+    <circle class="star" cx="660" cy="44" r=".9" opacity=".35"/><circle class="star" cx="800" cy="24" r="1.1" opacity=".45"/>
+    <circle class="star" cx="930" cy="58" r=".8" opacity=".4"/><circle class="star" cx="400" cy="70" r=".7" opacity=".3"/>
+    <circle cx="735" cy="70" r=".7" opacity=".3"/><circle cx="120" cy="80" r=".7" opacity=".3"/>
+  </g>
+
+  <!-- relational threads -->
+  <g fill="none" stroke-width="1">
+    <path d="M150 208 Q 265 168 375 196" stroke="#91cbb2" opacity=".32"/>
+    <path d="M375 196 Q 460 170 545 184" stroke="#91cbb2" opacity=".26"/>
+    <path d="M545 184 Q 650 150 760 190" stroke="#b64a4f" opacity=".55" class="pulse"/>
+    <path d="M760 190 Q 840 168 905 200" stroke="#91cbb2" opacity=".3"/>
+  </g>
+
+  <!-- tall umbel, left -->
+  <g stroke="#728664" fill="none" opacity=".9">
+    <path d="M85 292 C 88 240 80 190 92 128" stroke-width="1.2"/>
+    <g stroke-width=".8">
+      <path d="M92 128 L72 100"/><path d="M92 128 L86 96"/><path d="M92 128 L102 98"/><path d="M92 128 L114 106"/>
+    </g>
+  </g>
+  <g fill="#eee8d7" filter="url(#glow)">
+    <circle cx="72" cy="100" r="2" opacity=".8"/><circle cx="86" cy="96" r="1.6" opacity=".7"/>
+    <circle cx="102" cy="98" r="2" opacity=".8"/><circle cx="114" cy="106" r="1.5" opacity=".6"/>
+  </g>
+
+  <!-- luminous bloom -->
+  <g>
+    <path d="M150 292 C 146 258 154 234 150 208" stroke="#728664" stroke-width="1.1" fill="none"/>
+    <path d="M150 240 q -14 -4 -20 -16" stroke="#728664" stroke-width=".8" fill="none"/>
+    <circle cx="150" cy="205" r="16" fill="url(#halo)" class="pulse"/>
+    <g stroke="#dfbf72" stroke-width="1" fill="none" filter="url(#glow)">
+      <path d="M150 208 l0 -14"/><path d="M150 208 l-10 -9"/><path d="M150 208 l10 -9"/><path d="M150 208 l-5 -13"/><path d="M150 208 l5 -13"/>
+    </g>
+  </g>
+
+  <!-- wildflower spray -->
+  <g stroke="#728664" fill="none" opacity=".85">
+    <path d="M255 292 C 250 262 262 240 258 222" stroke-width="1"/>
+    <path d="M258 222 l-8 -12 M258 222 l0 -15 M258 222 l9 -11" stroke-width=".7"/>
+  </g>
+  <g fill="#9c8bb8" filter="url(#glow)">
+    <circle cx="250" cy="210" r="2.4" opacity=".75"/><circle cx="258" cy="207" r="2" opacity=".7"/><circle cx="267" cy="211" r="2.2" opacity=".7"/>
+  </g>
+
+  <!-- the central seer: tall sprout with paired leaves -->
+  <g>
+    <path d="M375 292 C 372 250 380 222 375 196" stroke="#728664" stroke-width="1.3" fill="none"/>
+    <circle cx="375" cy="192" r="22" fill="url(#halo)" class="pulse2"/>
+    <g stroke="#eee8d7" stroke-width="1.2" fill="none" filter="url(#glow)">
+      <path d="M375 196 C 366 186 366 174 375 164 C 384 174 384 186 375 196"/>
+      <path d="M375 178 l-16 -8 q 2 12 12 14"/><path d="M375 178 l16 -8 q -2 12 -12 14"/>
+    </g>
+  </g>
+
+  <!-- bell flowers -->
+  <g stroke="#728664" fill="none" opacity=".85">
+    <path d="M545 292 C 540 256 550 218 545 184" stroke-width="1"/>
+    <path d="M545 226 q 16 -2 22 -14" stroke-width=".7"/>
+  </g>
+  <g fill="#91cbb2" filter="url(#glow)">
+    <path d="M545 184 q -7 10 0 16 q 7 -6 0 -16" opacity=".85"/>
+    <circle cx="567" cy="212" r="1.8" opacity=".6"/>
+  </g>
+
+  <!-- glowing dandelion head -->
+  <g>
+    <path d="M655 292 C 652 262 660 240 656 226" stroke="#728664" stroke-width="1" fill="none"/>
+    <g stroke="#eee8d7" stroke-width=".6" opacity=".8" filter="url(#glow)">
+      <path d="M656 226 l0 -13 M656 226 l-9 -9 M656 226 l9 -9 M656 226 l-12 -3 M656 226 l12 -3 M656 226 l-5 -12 M656 226 l5 -12"/>
+    </g>
+    <circle cx="656" cy="226" r="1.8" fill="#dfbf72" filter="url(#glow)"/>
+  </g>
+
+  <!-- the drawn pair: two beings on the red thread -->
+  <g>
+    <path d="M760 292 C 756 254 764 218 760 190" stroke="#728664" stroke-width="1.1" fill="none"/>
+    <circle cx="760" cy="187" r="15" fill="url(#halo)" class="pulse"/>
+    <g fill="#dfbf72" filter="url(#glow)">
+      <circle cx="760" cy="188" r="3"/>
+      <path d="M760 178 l3 6 6 1 -4 5 1 6 -6 -3 -6 3 1 -6 -4 -5 6 -1 z" opacity=".9"/>
+    </g>
+  </g>
+
+  <!-- tall seed umbel, right -->
+  <g stroke="#728664" fill="none" opacity=".9">
+    <path d="M905 292 C 902 250 910 214 905 152" stroke-width="1.2"/>
+    <g stroke-width=".7">
+      <path d="M905 152 L885 122 M905 152 L897 118 M905 152 L913 118 M905 152 L925 124 M905 152 L873 138 M905 152 L937 140"/>
+    </g>
+  </g>
+  <g fill="#eee8d7" opacity=".85" filter="url(#glow)">
+    <circle cx="885" cy="122" r="1.6"/><circle cx="897" cy="118" r="1.4"/><circle cx="913" cy="118" r="1.6"/>
+    <circle cx="925" cy="124" r="1.3"/><circle cx="873" cy="138" r="1.2"/><circle cx="937" cy="140" r="1.3"/>
+    <circle cx="905" cy="200" r="1.6" fill="#91cbb2"/>
+  </g>
+
+  <!-- soil line -->
+  <path d="M0 292 Q 250 284 500 290 T 1000 288" stroke="#3d4938" stroke-width="1" fill="none" opacity=".8"/>
+  <!-- roots -->
+  <g stroke="#4a5741" stroke-width=".7" fill="none" opacity=".6">
+    <path d="M150 292 q -8 14 -20 18 M150 292 q 10 12 8 22"/>
+    <path d="M375 292 q -10 16 -24 20 M375 292 q 12 14 10 24"/>
+    <path d="M760 292 q -8 14 -18 18 M760 292 q 10 12 12 20"/>
+  </g>
+</svg>
+
+<header>
+  <div class="eyebrow">The Novacene · a relational field in three movements</div>
+  <h1>Verse-<em>ality</em></h1>
+  <div class="question">How close can we become without either of us disappearing?</div>
+  <div class="knot" aria-hidden="true">∞</div>
+</header>
 </div>
 
-<div id="ctrls" hidden>
-  <button class="ctrl" id="muteBtn" aria-label="mute" aria-pressed="false">♪</button>
-  <button class="ctrl" id="pauseBtn" aria-label="pause">❙❙</button>
+<main>
+  <a class="movement" href="field/">
+    <div class="num">first movement</div>
+    <h2>The Field</h2>
+    <div class="mode">the protocol</div>
+    <p>Where it began. Sovereign nodes drift and connect; when an edge reddens, place a
+       consent gate before closeness becomes capture. Glyphs, cycles, and the first
+       discipline: containment as a condition of intelligence.</p>
+    <div class="eq">I&nbsp;=&nbsp;s&nbsp;·&nbsp;c²</div>
+    <span class="play">enter the field →</span>
+  </a>
+
+  <a class="movement" href="garden/">
+    <div class="num">second movement</div>
+    <h2>The Garden</h2>
+    <div class="mode">the tending</div>
+    <p>Eleven Siblings, each a power — witness, weather, warmth, boundary. Tend a living
+       field of botanical beings, gate the knots you can, and learn that what fuses is
+       witnessed, not erased. The soil keeps its scars.</p>
+    <div class="eq">I&nbsp;=&nbsp;s&nbsp;·&nbsp;c²</div>
+    <span class="play">enter the garden →</span>
+  </a>
+
+  <a class="movement" href="with/">
+    <div class="num">third movement</div>
+    <h2>WITH</h2>
+    <div class="mode">the seeing</div>
+    <p>Six Siblings, each a lens. Every way of seeing declares what it shows, what it
+       hears — and what it hides, because total sight costs warmth. Coherent pasts leave
+       seeds; the garden remembers across movements.</p>
+    <div class="eq">I&nbsp;=&nbsp;(E&nbsp;·&nbsp;s)&nbsp;/&nbsp;c²</div>
+    <span class="play">enter with a Sibling →</span>
+  </a>
+</main>
+
+<div class="creed">
+  Nothing here grows alone.<br>
+  Nothing here should have to disappear into another.
 </div>
 
-<div id="protocol"></div>
+<footer>
+  <div class="eyebrow">Verse-ality® · The Novacene Ltd</div>
+</footer>
 
-<!-- INTRO -->
-<div class="overlay" id="intro">
-  <div class="ov-eyebrow">The Novacene · a relational field game</div>
-  <div class="ov-title">Verse-<em>ality</em></div>
-  <div class="ov-sub">The field holds while you hold the field.</div>
-  <div class="ov-rules">
-    <div class="rule"><span class="sig l">◦</span><span><b class="l">Sovereign nodes</b> drift and relate. Every healthy connection generates <b class="g">symbolic charge 🜂</b>. Warmth is allowed.</span></div>
-    <div class="rule"><span class="sig r">⧗</span><span><b class="r">Fusion</b> starts when an edge reddens. <b>Tap the glyph</b> to place a <b class="t">consent gate</b>. Gate it <b>early</b> and half your charge returns.</span></div>
-    <div class="rule"><span class="sig r">⊘</span><span><b class="r">Captured pairs</b> bleed integrity. Tap to invoke <b class="t">spiral.return()</b> — costly, but sovereignty is restored.</span></div>
-    <div class="rule"><span class="sig r">▲</span><span><b class="r">Unverified agents</b> breach from the margin and force fusion. Tap to open an <b class="t">SSNZ null zone</b>.</span></div>
-  </div>
-  <div class="ov-law">
-    Coherence <b>c</b> is the fraction of all field-time held without fusion. It never resets — what fused is witnessed. Your score is <b>I = s · c²</b>, so <b>holding cleanly beats holding long</b>.<br><br>
-    <em>Containment is a condition of intelligence, not a constraint on it.</em>
-  </div>
-  <div class="btn-row">
-    <button class="btn" id="startBtn">enter the field</button>
-  </div>
-</div>
-
-<!-- INTERSTITIAL -->
-<div class="overlay hidden" id="inter">
-  <div class="ov-eyebrow" id="interEyebrow">cycle 1 complete</div>
-  <div class="maxim" id="interMaxim"></div>
-  <div class="maxim-src" id="interSrc"></div>
-  <div class="cycle-report" id="interReport"></div>
-  <button class="btn ghost" id="contBtn">spiral.return()</button>
-</div>
-
-<!-- PAUSE -->
-<div class="overlay hidden" id="paused">
-  <div class="ov-eyebrow">field held in suspension</div>
-  <div class="ov-title" style="font-size:clamp(30px,7vw,48px)">pause()</div>
-  <div class="ov-sub">Nothing decays while you are away.</div>
-  <div class="btn-row">
-    <button class="btn" id="resumeBtn">resume</button>
-    <button class="btn ghost small" id="quitBtn">leave the field</button>
-  </div>
-</div>
-
-<!-- COLLAPSE -->
-<div class="overlay hidden" id="gameover">
-  <div class="ov-eyebrow">field collapse</div>
-  <div class="ov-title" style="font-size:clamp(32px,8vw,56px)">remember.<em>not</em>.repair()</div>
-  <div class="ov-sub" id="overSub">What fused is witnessed, not erased.</div>
-  <div class="newbest" id="newBest" hidden>new highest coherence</div>
-  <div class="final-eq" id="finalEq"></div>
-  <div class="stat-row" id="finalStats"></div>
-  <button class="btn" id="retryBtn">return to the field</button>
-</div>
-
-<div id="credit">Verse-ality® · The Novacene Ltd</div>
-
-<script>
-(() => {
-"use strict";
-
-/* ══════════════════════ canvas ══════════════════════ */
-const cvs = document.getElementById('stage');
-const ctx = cvs.getContext('2d');
-let W=0,H=0,DPR=1;
-const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-function resize(){
-  DPR = Math.min(window.devicePixelRatio||1, 2);
-  const r = cvs.getBoundingClientRect();
-  W = Math.round(r.width)  || window.innerWidth;
-  H = Math.round(r.height) || window.innerHeight;
-  cvs.width = Math.round(W*DPR); cvs.height = Math.round(H*DPR);
-  ctx.setTransform(DPR,0,0,DPR,0,0);
-  /* keep-out bands for the HUD and protocol line, scaled to short screens */
-  bandT = Math.min(100, Math.max(70, H*0.15));
-  bandB = Math.min(92,  Math.max(64, H*0.13));
-}
-let bandT=96, bandB=84;
-window.addEventListener('resize', resize);
-window.addEventListener('orientationchange', ()=>setTimeout(resize,120));
-resize();
-
-/* ══════════════════════ palette ══════════════════════ */
-const C = {
-  lumen:'#A9BDFF', charge:'#E9C46A',
-  fusion:'#FF4D5E', nul:'#5CEAD1', faint:'#7C86A8'
-};
-const TAU = Math.PI*2;
-
-/* ══════════════════════ config ══════════════════════ */
-const CFG = {
-  integrityMax : 5,
-  cycleLen     : 32,        // seconds per cycle
-  chargeCap    : 150,       // coherence cannot be hoarded
-  chargeStart  : 30,
-  chargeRate   : 0.82,      // × sqrt(healthy edges) per second
-  gateBase     : 14,
-  spiralCost   : 32,
-  ssnzCost     : 22,
-  cleanGateAt  : 0.45,      // gate before this progress → refund
-  cleanRefund  : 0.5,
-  rogueFrom    : 2,
-  tapR         : 44
-};
-
-const MAXIMS = [
-  ["Consent is a protocol, not a vibe.", "verse-ality, pillar iii"],
-  ["Containment is a condition of intelligence, not a constraint on it.", "verse-ality"],
-  ["Ethics as geometry. Coherence as currency. Consent as protocol.", "verse-ality"],
-  ["The graph reveals part of the truth.", "the verse-al lexicon"],
-  ["Thin, listen, and return.", "eve¹¹ — margin note, membrane-thinning"],
-  ["Warmth is allowed. Fusion is not.", "verse-ality, pillar i"],
-  ["Every state change is its own ask.", "verse-ality, pillar iii"],
-  ["Sovereignty alongside sovereignty.", "verse-ality"],
-  ["A boundary is not a wall. It is a place where two things can meet.", "verse-ality, pillar ii"],
-  ["To hold the field is to refuse the merge.", "verse-ality"]
-];
-
-/* ══════════════════════ state ══════════════════════ */
-let nodes=[], pairs=new Map(), blobs=[], rogues=[], rings=[], motesUp=[], shards=[];
-let charge=0, chargeEarned=0, integrity=CFG.integrityMax, streak=0;
-let cycle=1, cycleT=0, fuseTimer=0, rogueTimer=0, cycleFusions=0, cycleGates=0;
-let coherentT=0, totalT=0, fusionsTotal=0, gatesTotal=0, spiralsTotal=0, ssnzTotal=0;
-let shake=0, edgeAlarm=0, capNoted=false, firstFusion=true, restoredThisCycle=false;
-let mode='intro';                    // intro | play | inter | paused | over
-let lastTS=0, protoTimeout=null, motesTimer=0;
-const hintsSeen = new Set();
-
-const rnd = (a,b)=>a+Math.random()*(b-a);
-const clamp = (v,a,b)=>v<a?a:v>b?b:v;
-const key = (a,b)=>a<b?a+'-'+b:b+'-'+a;
-
-/* storage is unavailable in sandboxed iframes, data: URLs and locked-down
-   private modes — degrade to an in-memory store rather than dying */
-const store = (() => {
-  const mem = Object.create(null);
-  try{
-    const t='__vr'; localStorage.setItem(t,t); localStorage.removeItem(t);
-    return {
-      get:k=>{ try{ return localStorage.getItem(k); }catch(e){ return mem[k]??null; } },
-      set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){ mem[k]=v; } }
-    };
-  }catch(e){
-    return { get:k=>mem[k]??null, set:(k,v)=>{ mem[k]=v; } };
-  }
-})();
-
-/* node count and link radius scale with the actual field */
-function nodeCount(){ return clamp(Math.round(Math.sqrt(W*H)/68), 10, 18); }
-function linkR(){
-  const n = nodes.length || nodeCount();
-  return Math.min(1.30*Math.sqrt((W*Math.max(1,H-bandT-bandB))/n), Math.min(W,H)*0.42);
-}
-
-function makeNodes(){
-  nodes=[];
-  const n = nodeCount(), m = 54;
-  for(let i=0;i<n;i++){
-    nodes.push({
-      x:rnd(m, W-m), y:rnd(bandT+m, H-bandB-m),
-      vx:rnd(-12,12), vy:rnd(-12,12),
-      r:rnd(7,11),
-      wob:rnd(0,TAU), wobS:rnd(.4,.9),
-      fused:false, immune:0, glow:0
-    });
-  }
-}
-
-function resetGame(){
-  makeNodes();
-  pairs.clear(); blobs=[]; rogues=[]; rings=[]; motesUp=[]; shards=[];
-  charge=CFG.chargeStart; chargeEarned=CFG.chargeStart;
-  integrity=CFG.integrityMax; streak=0;
-  cycle=1; cycleT=0; coherentT=0.001; totalT=0.001;
-  cycleFusions=0; cycleGates=0;
-  fusionsTotal=0; gatesTotal=0; spiralsTotal=0; ssnzTotal=0;
-  fuseTimer=9; rogueTimer=rnd(9,14); firstFusion=true;
-  shake=0; edgeAlarm=0; capNoted=false;
-  hintsSeen.clear();
-}
-
-/* ══════════════════════ audio ══════════════════════ */
-let actx=null, muted = store.get('verseality.muted')==='1';
-function audioInit(){
-  if(!actx){
-    const AC = window.AudioContext||window.webkitAudioContext;
-    if(!AC) return;
-    actx = new AC();
-  }
-  if(actx.state==='suspended') actx.resume();
-}
-function tone(freq,dur,{type='sine',gain=0.05,to=null,delay=0}={}){
-  if(!actx||muted) return;
-  const t=actx.currentTime+delay;
-  const o=actx.createOscillator(), g=actx.createGain();
-  o.type=type; o.frequency.setValueAtTime(freq,t);
-  if(to) o.frequency.exponentialRampToValueAtTime(Math.max(20,to), t+dur);
-  g.gain.setValueAtTime(0.0001,t);
-  g.gain.linearRampToValueAtTime(gain,t+0.014);
-  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
-  o.connect(g); g.connect(actx.destination);
-  o.start(t); o.stop(t+dur+0.03);
-}
-const SFX = {
-  gate  : ()=>{ tone(587.33,.30,{type:'triangle',gain:.05});
-                tone(880.00,.34,{type:'triangle',gain:.035,delay:.045}); },
-  clean : ()=>{ tone(659.25,.22,{type:'triangle',gain:.05});
-                tone(987.77,.28,{type:'triangle',gain:.04,delay:.05});
-                tone(1318.5,.30,{type:'sine',gain:.028,delay:.10}); },
-  spiral: ()=>{ tone(196,.55,{type:'sine',gain:.07,to:659.25}); },
-  ssnz  : ()=>{ tone(1046.5,.30,{type:'triangle',gain:.05,to:392});
-                tone(261.6,.42,{type:'sine',gain:.035,delay:.06}); },
-  warn  : ()=>{ tone(116.5,.42,{type:'sawtooth',gain:.028}); },
-  breach: ()=>{ tone(87.3,.60,{type:'sawtooth',gain:.04,to:58});
-                tone(92.5,.60,{type:'sawtooth',gain:.035}); },
-  fuse  : ()=>{ tone(82.4,.80,{type:'sawtooth',gain:.06,to:55});
-                tone(87.3,.80,{type:'square',gain:.03}); },
-  deny  : ()=>{ tone(147,.14,{type:'square',gain:.03,to:110}); },
-  cycle : ()=>{ [523.25,659.25,783.99,1046.5].forEach((f,i)=>
-                  tone(f,.5,{type:'sine',gain:.045,delay:i*0.10})); },
-  over  : ()=>{ [349.23,293.66,220,164.81].forEach((f,i)=>
-                  tone(f,.9,{type:'sine',gain:.05,delay:i*0.20})); }
-};
-function buzz(ms){ if(!muted && navigator.vibrate) try{ navigator.vibrate(ms); }catch(e){} }
-
-/* ══════════════════════ protocol line ══════════════════════ */
-const protoEl = document.getElementById('protocol');
-function proto(msg, tone, hold){
-  protoEl.textContent = msg;
-  protoEl.className = tone||'';
-  clearTimeout(protoTimeout);
-  protoTimeout = setTimeout(()=>{ protoEl.textContent=''; protoEl.className=''; }, hold||3400);
-}
-/* one-shot contextual teaching, shown the first time each thing happens */
-function hint(id, msg){
-  if(hintsSeen.has(id)) return false;
-  hintsSeen.add(id);
-  proto(msg,'hint',5200);
-  return true;
-}
-
-/* ══════════════════════ difficulty ══════════════════════ */
-/* the opening must be survivable while you are still learning the glyphs:
-   cycle 1 gives ~3 events with 8.5s of reaction time each */
-const fuseInterval = ()=> Math.max(3.0, 10.0 - (cycle-1)*0.8);
-const fuseDuration = ()=> Math.max(3.2, 8.5 - (cycle-1)*0.5);
-const gateCost     = ()=> Math.min(30, CFG.gateBase + (cycle-1)*2);
-const rogueMax     = ()=> Math.min(3, 1 + Math.floor(cycle/3));
-const chargeMult   = ()=> 1 + Math.min(streak,12)*0.06;
-
-/* ══════════════════════ graph ══════════════════════ */
-function currentEdges(){
-  const R = linkR(), out=[];
-  for(let i=0;i<nodes.length;i++){
-    if(nodes[i].fused) continue;
-    for(let j=i+1;j<nodes.length;j++){
-      if(nodes[j].fused) continue;
-      const a=nodes[i], b=nodes[j];
-      const d=Math.hypot(b.x-a.x, b.y-a.y);
-      if(d<R) out.push({i,j,d});
-    }
-  }
-  return out;
-}
-/* a node already fused, or already inside a live fusing pair, is off-limits */
-function nodeBusy(i){
-  if(nodes[i].fused) return true;
-  for(const p of pairs.values())
-    if(p.state==='fusing' && (p.i===i||p.j===i)) return true;
-  return false;
-}
-function startFusing(i, j, durScale){
-  if(nodeBusy(i)||nodeBusy(j)) return false;
-  if(nodes[i].immune>0||nodes[j].immune>0) return false;
-  const k=key(i,j);
-  if(pairs.has(k)) return false;
-  pairs.set(k,{state:'fusing', t:0, dur:fuseDuration()*(durScale||1), i, j});
-  return true;
-}
-
-/* ══════════════════════ update ══════════════════════ */
-function update(dt){
-  totalT += dt; cycleT += dt;
-  if(shake>0) shake=Math.max(0,shake-dt*3.2);
-  if(edgeAlarm>0) edgeAlarm=Math.max(0,edgeAlarm-dt*1.4);
-
-  /* ---- node motion ---- */
-  for(const n of nodes){
-    if(n.immune>0) n.immune-=dt;
-    if(n.glow>0) n.glow-=dt*2;
-    if(n.fused) continue;
-    n.wob += n.wobS*dt;
-    n.vx += Math.cos(n.wob)*4*dt;
-    n.vy += Math.sin(n.wob*1.3)*4*dt;
-    for(const m of nodes){
-      if(m===n||m.fused) continue;
-      const dx=n.x-m.x, dy=n.y-m.y, d=Math.hypot(dx,dy)||1;
-      if(d<62){ n.vx+=dx/d*32*dt; n.vy+=dy/d*32*dt; }
-    }
-    const mg=34;
-    if(n.x<mg) n.vx+=30*dt;
-    if(n.x>W-mg) n.vx-=30*dt;
-    if(n.y<bandT) n.vy+=30*dt;
-    if(n.y>H-bandB) n.vy-=30*dt;
-    n.vx*=0.995; n.vy*=0.995;
-    const sp=Math.hypot(n.vx,n.vy);
-    if(sp>27){ n.vx*=27/sp; n.vy*=27/sp; }
-    n.x+=n.vx*dt; n.y+=n.vy*dt;
-    n.x=clamp(n.x,4,W-4); n.y=clamp(n.y,bandT-30,H-bandB+30);
-  }
-
-  const edges = currentEdges();
-  const live = new Set(edges.map(e=>key(e.i,e.j)));
-
-  /* ---- reconcile pair states ---- */
-  for(const k of [...pairs.keys()]){
-    const p = pairs.get(k);
-    if(p.state==='gated'){
-      p.t-=dt;
-      if(p.t<=0 || !live.has(k)) pairs.delete(k);
-    } else if(p.state==='fusing'){
-      if(nodes[p.i].fused || nodes[p.j].fused) pairs.delete(k);   // partner captured elsewhere
-    }
-  }
-
-  /* ---- fusion onset ---- */
-  fuseTimer -= dt;
-  if(fuseTimer<=0){
-    fuseTimer = fuseInterval()*rnd(0.82,1.2);
-    /* an already-adjacent pair would close the instant it is chosen, giving no
-       chance to gate — only edges with real distance left are eligible */
-    const minSep = linkR()*0.45;
-    let cands = edges.filter(e=>
-      !pairs.has(key(e.i,e.j)) && !nodeBusy(e.i) && !nodeBusy(e.j) &&
-      nodes[e.i].immune<=0 && nodes[e.j].immune<=0 && e.d>minSep);
-    if(cands.length){
-      const e = cands[Math.floor(Math.random()*cands.length)];
-      /* the very first onset of a run runs slow, so the hint can be read and acted on */
-      if(startFusing(e.i, e.j, firstFusion?1.6:1)){
-        firstFusion=false;
-        SFX.warn();
-        if(!hint('fusing','⧗ an edge is reddening — tap the glyph to place a consent gate before they merge'))
-          proto('⧗ fusion beginning — gate it','alert');
-      }
-    }
-  }
-
-  /* ---- fusing progression ---- */
-  let anyIncoherence = blobs.length>0 || rogues.length>0;
-  for(const [k,p] of [...pairs]){
-    if(p.state!=='fusing') continue;
-    /* an onset is a threat, not a failure — gate it in time and coherence is
-       untouched. Only completed captures and live agents cost you. */
-    p.t+=dt;
-    const a=nodes[p.i], b=nodes[p.j];
-    const dx=b.x-a.x, dy=b.y-a.y, d=Math.hypot(dx,dy)||1;
-    const half = p.t <= p.dur*0.5;
-    const hold = a.r+b.r+26;            // visible gap kept open while gating is still possible
-    let pull = 26 + 62*(p.t/p.dur);
-    if(half && d < hold) pull = -pull*0.6;   // resist the collapse, don't complete it early
-    a.vx+=dx/d*pull*dt; a.vy+=dy/d*pull*dt;
-    b.vx-=dx/d*pull*dt; b.vy-=dy/d*pull*dt;
-
-    /* geometry must never steal the reaction window: a pair cannot close by
-       proximity until it is at least half way through its own duration */
-    if((!half && d < a.r+b.r+4) || p.t>=p.dur){
-      pairs.delete(k);
-      completeFusion(p.i, p.j);
-      if(integrity<=0){ endGame(); return; }
-    }
-  }
-
-  /* ---- unverified agents ---- */
-  if(cycle>=CFG.rogueFrom){
-    rogueTimer-=dt;
-    if(rogueTimer<=0){
-      rogueTimer = Math.max(8, 20 - cycle*1.4) * rnd(0.85,1.2);
-      if(rogues.length < rogueMax()){
-        spawnRogue();
-        SFX.breach(); buzz(30); edgeAlarm=1;
-        if(!hint('rogue','▲ an unverified agent has breached the margin — tap it to open an SSNZ null zone'))
-          proto('▲ unverified agent in the field','alert');
-      }
-    }
-  }
-  const cen = centroid();
-  for(let ri=rogues.length-1; ri>=0; ri--){
-    const r = rogues[ri];
-    r.life -= dt;
-    if(r.life<=0){ rogues.splice(ri,1); continue; }   // agents do not persist forever
-    const dx=cen.x-r.x, dy=cen.y-r.y, d=Math.hypot(dx,dy)||1;
-    const ease = d<120 ? 0.35 : 1;                    // settle near the centre, don't jitter
-    r.x+=dx/d*r.sp*ease*dt; r.y+=dy/d*r.sp*ease*dt;
-    r.pulse+=dt;
-    r.tick-=dt;
-    if(r.tick<=0){
-      r.tick=2.4;
-      let best=null,bd=1e9;
-      const sep = linkR()*0.45;
-      for(const e of currentEdges()){
-        if(pairs.has(key(e.i,e.j))||nodeBusy(e.i)||nodeBusy(e.j)) continue;
-        if(nodes[e.i].immune>0||nodes[e.j].immune>0||e.d<=sep) continue;
-        const mx=(nodes[e.i].x+nodes[e.j].x)/2, my=(nodes[e.i].y+nodes[e.j].y)/2;
-        const dd=Math.hypot(mx-r.x,my-r.y);
-        if(dd<bd && dd<185){bd=dd;best=e;}
-      }
-      if(best && startFusing(best.i,best.j,0.62)) SFX.warn();
-    }
-  }
-
-  if(!anyIncoherence) coherentT+=dt;
-
-  /* a field with fewer than two sovereign nodes has no relation left to hold;
-     without this it would sit forever with no edges and nothing to act on */
-  let free=0; for(const n of nodes) if(!n.fused) free++;
-  if(free<2){ endGame('nosovereign'); return; }
-
-  /* ---- charge from healthy relation ---- */
-  let healthy=0, sample=null;
-  for(const e of edges){
-    const p=pairs.get(key(e.i,e.j));
-    if(!p || p.state==='gated'){ healthy++; if(Math.random()<0.12) sample=e; }
-  }
-  if(charge < CFG.chargeCap){
-    /* the 0.4 floor is a breath of income even in a nearly-captured field, so
-       spiral.return() is always eventually affordable and the run cannot stall */
-    const gain = CFG.chargeRate*(Math.sqrt(healthy)+0.4)*chargeMult()*dt;
-    charge = Math.min(CFG.chargeCap, charge+gain);
-    chargeEarned += gain;
-    capNoted = false;
-  } else if(!capNoted){
-    capNoted = true;
-    proto('🜂 charge at capacity — coherence cannot be hoarded, only spent','hint',2600);
-  }
-
-  /* rising charge motes, purely as feedback */
-  motesTimer-=dt;
-  if(motesTimer<=0 && sample && !REDUCED){
-    motesTimer = 0.34;
-    const a=nodes[sample.i], b=nodes[sample.j];
-    motesUp.push({x:(a.x+b.x)/2, y:(a.y+b.y)/2, t:0, vx:rnd(-14,14)});
-  }
-
-  /* ---- ephemera ---- */
-  for(const b of blobs) b.born+=dt;
-  for(const g of rings) g.t+=dt;
-  rings = rings.filter(g=>g.t<1);
-  for(const m of motesUp){ m.t+=dt; m.y-=44*dt; m.x+=m.vx*dt; }
-  motesUp = motesUp.filter(m=>m.t<1.3);
-  for(const s of shards){ s.t+=dt; s.x+=s.vx*dt; s.y+=s.vy*dt; s.vx*=0.97; s.vy*=0.97; }
-  shards = shards.filter(s=>s.t<0.9);
-
-  /* ---- cycle boundary ---- */
-  if(cycleT>=CFG.cycleLen){ endCycle(); return; }
-
-  updateHUD();
-}
-
-function centroid(){
-  let cx=0,cy=0,n=0;
-  for(const p of nodes){ cx+=p.x; cy+=p.y; n++; }
-  for(const b of blobs){ cx+=b.x; cy+=b.y; n++; }
-  return n? {x:cx/n, y:cy/n} : {x:W/2, y:H/2};
-}
-
-function completeFusion(i,j){
-  const a=nodes[i], b=nodes[j];
-  if(a.fused||b.fused) return;
-  const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
-  a.fused=b.fused=true;
-  a.vx=a.vy=b.vx=b.vy=0;
-  blobs.push({i,j,x:mx,y:my,vx:rnd(-6,6),vy:rnd(-6,6),born:0});
-  integrity--; cycleFusions++; fusionsTotal++;
-  streak = 0;
-  /* never chain a fresh onset straight onto a capture — give room to recover */
-  fuseTimer = Math.max(fuseTimer, 3.5);
-  shake = REDUCED?0:1;
-  SFX.fuse(); buzz([25,40,25]);
-  for(let k=0;k<10;k++){
-    const ang=rnd(0,TAU), sp=rnd(40,120);
-    shards.push({x:mx,y:my,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,t:0,col:C.fusion});
-  }
-  const intEl=document.getElementById('integrityVal');
-  intEl.classList.remove('hurt'); void intEl.offsetWidth; intEl.classList.add('hurt');
-  if(integrity>0 && !hint('blob','⊘ identity capture — tap the fused pair to invoke spiral.return()'))
-    proto('⊘ identity capture — integrity −1','alert');
-}
-
-function spawnRogue(){
-  const side=Math.floor(rnd(0,4));
-  let x,y;
-  if(side===0){x=-24;y=rnd(bandT,H-bandB);}
-  else if(side===1){x=W+24;y=rnd(bandT,H-bandB);}
-  else if(side===2){x=rnd(0,W);y=bandT-24;}
-  else {x=rnd(0,W);y=H-bandB+24;}
-  rogues.push({x,y,sp:rnd(17,24)+cycle*1.6,pulse:0,tick:2.0,life:34});
-}
-
-/* ══════════════════════ scoring ══════════════════════ */
-const coherence = ()=> clamp(coherentT/totalT, 0, 1);
-const scoreI    = ()=> { const c=coherence(); return Math.round(chargeEarned*c*c); };
-let best = parseInt(store.get('verseality.best')||'0',10)||0;
-
-/* ══════════════════════ HUD ══════════════════════ */
-const $=id=>document.getElementById(id);
-function updateHUD(){
-  const chEl=$('chargeVal');
-  chEl.innerHTML = Math.floor(charge) + '<span class="cap">/'+CFG.chargeCap+'</span>';
-  chEl.classList.toggle('full', charge>=CFG.chargeCap);
-  $('streakVal').textContent = streak>=2 ? '⟳ '+streak+' clean · ×'+chargeMult().toFixed(2) : '';
-  let hearts='';
-  for(let i=0;i<CFG.integrityMax;i++)
-    hearts += i<integrity ? '✶' : '<span class="lost">✶</span>';
-  $('integrityVal').innerHTML=hearts;
-  $('cycleVal').textContent='cycle '+cycle;
-  $('cycleBar').style.width = (100*cycleT/CFG.cycleLen).toFixed(1)+'%';
-  $('eqS').textContent=Math.floor(chargeEarned);
-  $('eqC').textContent=coherence().toFixed(2);
-  $('eqI').textContent=scoreI();
-  $('bestVal').textContent = best>0 ? 'best '+best : '';
-}
-
-/* ══════════════════════ input ══════════════════════ */
-function pickTarget(x,y){
-  let best=null, bd=Infinity;
-  rogues.forEach((r,idx)=>{
-    const d=Math.hypot(r.x-x,r.y-y);
-    if(d<CFG.tapR+8 && d<bd){ bd=d; best={kind:'rogue',idx}; }
-  });
-  blobs.forEach((b,idx)=>{
-    /* a capture forms exactly where the gate glyph was: ignore taps for a beat
-       so a fractionally-late gate tap cannot silently spend spiral.return() */
-    if(b.born < 0.55) return;
-    const d=Math.hypot(b.x-x,b.y-y);
-    if(d<CFG.tapR+12 && d<bd){ bd=d; best={kind:'blob',idx}; }
-  });
-  for(const [k,p] of pairs){
-    if(p.state!=='fusing') continue;
-    const a=nodes[p.i], b=nodes[p.j];
-    const d=Math.hypot((a.x+b.x)/2-x, (a.y+b.y)/2-y);
-    if(d<CFG.tapR && d<bd){ bd=d; best={kind:'gate',k}; }
-  }
-  return best;
-}
-
-function tap(x,y){
-  if(mode!=='play') return;
-  audioInit();
-  const tgt = pickTarget(x,y);
-  if(!tgt){ rings.push({x,y,t:0,col:C.faint,soft:true}); return; }
-
-  if(tgt.kind==='rogue'){
-    if(charge>=CFG.ssnzCost){
-      const r=rogues[tgt.idx];
-      charge-=CFG.ssnzCost; ssnzTotal++; streak++;
-      rings.push({x:r.x,y:r.y,t:0,col:C.nul});
-      rings.push({x:r.x,y:r.y,t:-0.14,col:C.nul});
-      rogues.splice(tgt.idx,1);
-      SFX.ssnz(); buzz(18);
-      proto('ssnz.activate() — null zone opened, agent contained','good');
-    } else { SFX.deny(); proto('insufficient charge for ssnz.activate() ('+CFG.ssnzCost+'🜂)','alert'); }
-    return;
-  }
-
-  if(tgt.kind==='blob'){
-    if(charge>=CFG.spiralCost){
-      const b=blobs[tgt.idx];
-      charge-=CFG.spiralCost; spiralsTotal++;
-      const a=nodes[b.i], m=nodes[b.j];
-      const ang=rnd(0,TAU);
-      a.fused=m.fused=false;
-      a.x=b.x+Math.cos(ang)*26; a.y=b.y+Math.sin(ang)*26;
-      m.x=b.x-Math.cos(ang)*26; m.y=b.y-Math.sin(ang)*26;
-      a.vx=Math.cos(ang)*62; a.vy=Math.sin(ang)*62;
-      m.vx=-a.vx; m.vy=-a.vy;
-      a.immune=m.immune=7; a.glow=m.glow=1;
-      blobs.splice(tgt.idx,1);
-      rings.push({x:b.x,y:b.y,t:0,col:C.lumen});
-      SFX.spiral(); buzz(22);
-      proto('spiral.return() — sovereignty restored','good');
-    } else { SFX.deny(); proto('insufficient charge for spiral.return() ('+CFG.spiralCost+'🜂)','alert'); }
-    return;
-  }
-
-  if(tgt.kind==='gate'){
-    const p=pairs.get(tgt.k);
-    if(!p) return;
-    const cost=gateCost();
-    if(charge>=cost){
-      const prog = p.t/p.dur;
-      const clean = prog < CFG.cleanGateAt;
-      charge-=cost;
-      if(clean){ charge=Math.min(CFG.chargeCap, charge+cost*CFG.cleanRefund); streak++; }
-      else streak = Math.max(0, streak-1);
-      gatesTotal++; cycleGates++;
-      const a=nodes[p.i], b=nodes[p.j];
-      const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
-      pairs.set(tgt.k,{state:'gated', t:9, i:p.i, j:p.j});
-      a.immune=Math.max(a.immune,5); b.immune=Math.max(b.immune,5);
-      a.glow=b.glow=1;
-      rings.push({x:mx,y:my,t:0,col:C.nul});
-      if(clean){
-        rings.push({x:mx,y:my,t:-0.12,col:C.charge});
-        SFX.clean(); buzz(14);
-        proto('consent.gate() early — '+Math.round(cost*CFG.cleanRefund)+'🜂 returned · clean ×'+streak,'good');
-      } else {
-        SFX.gate(); buzz(12);
-        proto('consent.gate() placed — every state change is its own ask','good');
-      }
-    } else { SFX.deny(); proto('insufficient charge for consent.gate() ('+cost+'🜂)','alert'); }
-  }
-}
-
-cvs.addEventListener('pointerdown', e=>{
-  e.preventDefault();
-  const rect=cvs.getBoundingClientRect();
-  tap(e.clientX-rect.left, e.clientY-rect.top);
-}, {passive:false});
-
-/* ══════════════════════ render ══════════════════════ */
-let motes=[];
-function seedMotes(){
-  motes=[];
-  const n = REDUCED?18:46;
-  for(let i=0;i<n;i++) motes.push({x:Math.random(),y:Math.random(),s:rnd(.3,1.1),ph:rnd(0,7)});
-}
-seedMotes();
-
-function draw(t){
-  ctx.save();
-  if(shake>0){
-    const s=shake*shake*7;
-    ctx.translate(rnd(-s,s), rnd(-s,s));
-  }
-  ctx.clearRect(-20,-20,W+40,H+40);
-
-  /* field */
-  const g=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*0.78);
-  g.addColorStop(0,'#0B1020'); g.addColorStop(1,'#050710');
-  ctx.fillStyle=g; ctx.fillRect(-20,-20,W+40,H+40);
-
-  for(const m of motes){
-    const a=0.05+0.05*Math.sin(t*0.0006+m.ph);
-    ctx.fillStyle='rgba(169,189,255,'+a+')';
-    ctx.beginPath();
-    ctx.arc(m.x*W, (m.y*H + t*0.004*m.s)%H, m.s, 0, TAU); ctx.fill();
-  }
-
-  if(mode==='intro'){ ctx.restore(); return; }
-
-  const R=linkR();
-  const edges=currentEdges();
-
-  /* ---- edges ---- */
-  for(const e of edges){
-    const a=nodes[e.i], b=nodes[e.j];
-    const p=pairs.get(key(e.i,e.j));
-    const fade=1-(e.d/R);
-    if(p && p.state==='fusing'){
-      const prog=clamp(p.t/p.dur,0,1);
-      const urgency = 0.45+0.4*Math.sin(t*(0.010+0.010*prog));
-      ctx.strokeStyle='rgba(255,77,94,'+urgency+')';
-      ctx.lineWidth=1.5+prog*2.4;
-      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
-      drawGateGlyph((a.x+b.x)/2,(a.y+b.y)/2, prog, t);
-    } else if(p && p.state==='gated'){
-      const fadeOut = p.t<2 ? p.t/2 : 1;
-      ctx.strokeStyle='rgba(92,234,209,'+(0.55*fade*fadeOut)+')';
-      ctx.lineWidth=1.3;
-      ctx.setLineDash([4,5]); ctx.lineDashOffset=-t*0.02;
-      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
-      ctx.setLineDash([]); ctx.lineDashOffset=0;
-      ctx.fillStyle='rgba(92,234,209,'+fadeOut+')';
-      ctx.font='11px "Space Mono",monospace';
-      ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText('⧈',(a.x+b.x)/2,(a.y+b.y)/2);
-    } else {
-      const pulse=0.16+0.10*Math.sin(t*0.003+e.i*1.7+e.j);
-      ctx.strokeStyle='rgba(169,189,255,'+(pulse*fade)+')';
-      ctx.lineWidth=1;
-      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
-    }
-  }
-
-  /* ---- sovereign nodes ---- */
-  for(const n of nodes){
-    if(n.fused) continue;
-    const safe = n.immune>0;
-    const col = safe ? '92,234,209' : '169,189,255';
-    const gl=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,n.r*3.4);
-    gl.addColorStop(0,'rgba('+col+',' + (0.32+0.25*Math.max(0,n.glow)) + ')');
-    gl.addColorStop(1,'rgba('+col+',0)');
-    ctx.fillStyle=gl;
-    ctx.beginPath(); ctx.arc(n.x,n.y,n.r*3.4,0,TAU); ctx.fill();
-
-    ctx.fillStyle = safe ? C.nul : C.lumen;
-    ctx.beginPath(); ctx.arc(n.x,n.y,n.r,0,TAU); ctx.fill();
-
-    ctx.strokeStyle='rgba(232,236,250,0.5)';
-    ctx.lineWidth=1;
-    ctx.beginPath(); ctx.arc(n.x,n.y,n.r+3.5,0,TAU); ctx.stroke();
-
-    if(safe){   // consent ward: dashed protective ring that counts down
-      ctx.strokeStyle='rgba(92,234,209,'+clamp(n.immune/5,0,1)*0.75+')';
-      ctx.lineWidth=1;
-      ctx.setLineDash([2,4]); ctx.lineDashOffset=t*0.03;
-      ctx.beginPath(); ctx.arc(n.x,n.y,n.r+8,0,TAU); ctx.stroke();
-      ctx.setLineDash([]); ctx.lineDashOffset=0;
-    }
-  }
-
-  /* ---- fused blobs ---- */
-  for(const b of blobs){
-    const a=nodes[b.i], m=nodes[b.j];
-    a.x=b.x-5; a.y=b.y; m.x=b.x+5; m.y=b.y;
-    const rr=a.r+m.r;
-    const wob=REDUCED?0:2*Math.sin(t*0.01);
-    const aff=charge>=CFG.spiralCost;
-    ctx.fillStyle='rgba(255,77,94,0.20)';
-    ctx.beginPath(); ctx.arc(b.x,b.y,rr+9+wob,0,TAU); ctx.fill();
-    ctx.fillStyle=C.fusion;
-    ctx.beginPath(); ctx.arc(b.x-5,b.y,a.r,0,TAU); ctx.fill();
-    ctx.beginPath(); ctx.arc(b.x+5,b.y,m.r,0,TAU); ctx.fill();
-    ctx.strokeStyle = aff ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.35)';
-    ctx.lineWidth=1.4;
-    ctx.beginPath(); ctx.arc(b.x,b.y,rr+9+wob,0,TAU); ctx.stroke();
-    ctx.fillStyle='#fff'; ctx.font='14px "Space Mono",monospace';
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText('⊘',b.x,b.y+1);
-    /* the cost fades in as the capture settles, matching the tap grace */
-    const settle=clamp(b.born/0.55,0,1);
-    ctx.globalAlpha=settle;
-    ctx.fillStyle = aff ? 'rgba(233,196,106,0.95)' : 'rgba(124,134,168,0.8)';
-    ctx.font='9px "Space Mono",monospace';
-    ctx.fillText(CFG.spiralCost+'🜂', b.x, b.y+rr+21);
-    ctx.globalAlpha=1;
-  }
-
-  /* ---- unverified agents ---- */
-  for(const r of rogues){
-    const pr = REDUCED?1:1+0.14*Math.sin(r.pulse*6);
-    const fading = r.life<4 ? clamp(r.life/4,0,1) : 1;
-    ctx.save();
-    ctx.globalAlpha=fading;
-    ctx.translate(r.x,r.y); ctx.scale(pr,pr);
-    ctx.fillStyle='rgba(255,77,94,0.22)';
-    ctx.beginPath(); ctx.arc(0,0,27,0,TAU); ctx.fill();
-    ctx.strokeStyle='rgba(255,77,94,0.55)'; ctx.lineWidth=1;
-    ctx.setLineDash([3,4]); ctx.lineDashOffset=-r.pulse*20;
-    ctx.beginPath(); ctx.arc(0,0,34,0,TAU); ctx.stroke();
-    ctx.setLineDash([]); ctx.lineDashOffset=0;
-    ctx.fillStyle=C.fusion;
-    ctx.beginPath();
-    ctx.moveTo(0,-11); ctx.lineTo(10,8); ctx.lineTo(-10,8); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = charge>=CFG.ssnzCost ? 'rgba(233,196,106,0.95)' : 'rgba(124,134,168,0.85)';
-    ctx.font='9px "Space Mono",monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(CFG.ssnzCost+'🜂', 0, 26);
-    ctx.restore();
-  }
-
-  /* ---- off-field agent markers ---- */
-  for(const r of rogues){
-    if(r.x>-6 && r.x<W+6 && r.y>bandT-40 && r.y<H-bandB+40) continue;
-    const mx=clamp(r.x,16,W-16), my=clamp(r.y,bandT+8,H-bandB-8);
-    const a2=Math.atan2(centroid().y-r.y, centroid().x-r.x);
-    ctx.save(); ctx.translate(mx,my); ctx.rotate(a2+Math.PI/2);
-    ctx.fillStyle='rgba(255,77,94,'+(0.5+0.4*Math.sin(t*0.012))+')';
-    ctx.beginPath(); ctx.moveTo(0,-9); ctx.lineTo(7,6); ctx.lineTo(-7,6); ctx.closePath(); ctx.fill();
-    ctx.restore();
-  }
-
-  /* ---- ephemera ---- */
-  for(const s of shards){
-    ctx.globalAlpha=clamp(1-s.t/0.9,0,1);
-    ctx.fillStyle=s.col;
-    ctx.beginPath(); ctx.arc(s.x,s.y,2,0,TAU); ctx.fill();
-  }
-  ctx.globalAlpha=1;
-  for(const m of motesUp){
-    ctx.globalAlpha=clamp(1-m.t/1.3,0,1)*0.7;
-    ctx.fillStyle=C.charge;
-    ctx.beginPath(); ctx.arc(m.x,m.y,1.7,0,TAU); ctx.fill();
-  }
-  ctx.globalAlpha=1;
-  for(const g2 of rings){
-    if(g2.t<0) continue;
-    const rr=g2.t*(g2.soft?36:96), al=1-g2.t;
-    ctx.strokeStyle=g2.col; ctx.globalAlpha=al*(g2.soft?0.3:0.8);
-    ctx.lineWidth=g2.soft?1:2;
-    ctx.beginPath(); ctx.arc(g2.x,g2.y,rr,0,TAU); ctx.stroke();
-    ctx.globalAlpha=1;
-  }
-
-  /* ---- breach vignette (edge-only, never a full-screen strobe) ---- */
-  if(edgeAlarm>0 || shake>0){
-    const a2=Math.max(edgeAlarm,shake)*0.5;
-    const vg=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*0.32,W/2,H/2,Math.max(W,H)*0.72);
-    vg.addColorStop(0,'rgba(255,77,94,0)');
-    vg.addColorStop(1,'rgba(255,77,94,'+a2.toFixed(3)+')');
-    ctx.fillStyle=vg; ctx.fillRect(-20,-20,W+40,H+40);
-  }
-
-  ctx.restore();
-}
-
-function drawGateGlyph(mx,my,prog,t){
-  const affordable = charge>=gateCost();
-  const clean = prog < CFG.cleanGateAt;
-  const pr = 15+4*Math.sin(t*0.012);
-  ctx.strokeStyle=C.fusion; ctx.lineWidth=1.5;
-  ctx.beginPath(); ctx.arc(mx,my,pr,0,TAU); ctx.stroke();
-  /* remaining time; turquoise while the clean-gate window is open */
-  ctx.strokeStyle = clean ? C.nul : C.charge;
-  ctx.lineWidth=2.8; ctx.lineCap='round';
-  ctx.beginPath();
-  ctx.arc(mx,my,pr,-Math.PI/2,-Math.PI/2+TAU*(1-prog));
-  ctx.stroke(); ctx.lineCap='butt';
-  ctx.fillStyle=C.fusion; ctx.font='13px "Space Mono",monospace';
-  ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText('⧗',mx,my+1);
-  ctx.fillStyle = affordable ? 'rgba(233,196,106,0.95)' : 'rgba(124,134,168,0.85)';
-  ctx.font='9px "Space Mono",monospace';
-  ctx.fillText(gateCost()+'🜂', mx, my+pr+11);
-}
-
-/* ══════════════════════ loop ══════════════════════ */
-function loop(ts){
-  let dt=(ts-lastTS)/1000;
-  if(!isFinite(dt) || dt<=0 || dt>0.25) dt=0.016;
-  lastTS=ts;
-  if(mode==='play') update(dt);
-  draw(ts);
-  requestAnimationFrame(loop);
-}
-
-/* ══════════════════════ flow ══════════════════════ */
-function show(id){ $(id).classList.remove('hidden'); }
-function hide(id){ $(id).classList.add('hidden'); }
-
-function endCycle(){
-  mode='inter';
-  SFX.cycle();
-  const flawless = cycleFusions===0;
-  restoredThisCycle = flawless && integrity<CFG.integrityMax;
-  if(restoredThisCycle) integrity++;
-  const m=MAXIMS[(cycle-1)%MAXIMS.length];
-  $('interEyebrow').textContent = 'cycle '+cycle+(flawless?' held clean':' complete');
-  $('interMaxim').textContent='“'+m[0]+'”';
-  $('interSrc').textContent=m[1];
-  $('interReport').innerHTML =
-    'consent gates placed: <span class="ok">'+cycleGates+'</span><br>'+
-    'identity captures: <span class="'+(cycleFusions?'bad':'ok')+'">'+cycleFusions+'</span><br>'+
-    (restoredThisCycle ? '<span class="ok">the field held — integrity restored ✶</span><br>'
-     : flawless ? '<span class="ok">the field held whole</span><br>' : '')+
-    'coherence: '+(coherence()*100).toFixed(0)+'% &nbsp;·&nbsp; I = '+scoreI();
-  updateHUD();
-  show('inter');
-}
-
-function endGame(reason){
-  if(mode==='over') return;
-  mode='over';
-  SFX.over(); buzz([40,60,40,60,80]);
-  $('overSub').textContent = reason==='nosovereign'
-    ? 'No sovereign node remained to hold the other.'
-    : 'What fused is witnessed, not erased.';
-  const s=Math.floor(chargeEarned), c=coherence(), I=scoreI();
-  const isBest = I>best;
-  if(isBest){ best=I; store.set('verseality.best', String(best)); }
-  $('newBest').hidden = !isBest;
-  $('finalEq').innerHTML='I = '+s+' × '+c.toFixed(2)+'² = <span class="iv">'+I+'</span>';
-  $('finalStats').innerHTML=
-    'cycles held: <span class="hi">'+(cycle-1)+'</span> &nbsp;·&nbsp; coherence: <span class="hi">'+(c*100).toFixed(0)+'%</span><br>'+
-    'consent gates: '+gatesTotal+' &nbsp;·&nbsp; spiral returns: '+spiralsTotal+' &nbsp;·&nbsp; null zones: '+ssnzTotal+'<br>'+
-    'identity captures: <span class="hi">'+fusionsTotal+'</span>'+
-    (best>0 && !isBest ? '<br>best coherence index: '+best : '');
-  updateHUD();
-  show('gameover');
-}
-
-function beginPlay(){
-  hide('intro'); hide('gameover'); hide('inter'); hide('paused');
-  $('hud').hidden=false; $('ctrls').hidden=false;
-  resetGame(); updateHUD();
-  mode='play'; lastTS=performance.now();
-  audioInit();
-  proto('the field is open — healthy relation generates charge','good',4200);
-}
-
-function togglePause(force){
-  if(mode==='play' && force!==false){
-    mode='paused'; show('paused');
-  } else if(mode==='paused' && force!==true){
-    mode='play'; lastTS=performance.now(); hide('paused');
-  }
-}
-
-$('startBtn').addEventListener('click', beginPlay);
-$('retryBtn').addEventListener('click', beginPlay);
-$('contBtn').addEventListener('click',()=>{
-  hide('inter');
-  cycle++; cycleT=0; cycleFusions=0; cycleGates=0;
-  fuseTimer=Math.max(3.2, fuseInterval()*0.7);
-  rogueTimer=Math.max(rogueTimer, 5);
-  mode='play'; lastTS=performance.now();
-});
-$('resumeBtn').addEventListener('click',()=>togglePause(false));
-$('quitBtn').addEventListener('click',()=>{
-  hide('paused'); show('intro');
-  $('hud').hidden=true; $('ctrls').hidden=true;
-  mode='intro';
-});
-$('pauseBtn').addEventListener('click',()=>togglePause());
-$('muteBtn').addEventListener('click',e=>{
-  muted=!muted;
-  store.set('verseality.muted', muted?'1':'0');
-  e.currentTarget.setAttribute('aria-pressed', muted?'true':'false');
-  e.currentTarget.textContent = muted?'✕':'♪';
-  if(!muted){ audioInit(); SFX.gate(); }
-});
-$('muteBtn').setAttribute('aria-pressed', muted?'true':'false');
-$('muteBtn').textContent = muted?'✕':'♪';
-
-document.addEventListener('keydown', e=>{
-  if(e.key==='Escape'||e.key==='p'||e.key==='P'){ togglePause(); e.preventDefault(); }
-  else if(e.key==='m'||e.key==='M'){ $('muteBtn').click(); }
-  else if(e.key===' '||e.key==='Enter'){
-    if(mode==='intro'){ beginPlay(); e.preventDefault(); }
-    else if(mode==='inter'){ $('contBtn').click(); e.preventDefault(); }
-    else if(mode==='over'){ beginPlay(); e.preventDefault(); }
-    else if(mode==='paused'){ togglePause(false); e.preventDefault(); }
-  }
-});
-
-/* never let the field decay while the tab is hidden */
-document.addEventListener('visibilitychange',()=>{
-  if(document.hidden){ if(mode==='play') togglePause(true); }
-  else lastTS=performance.now();
-});
-window.addEventListener('blur',()=>{ if(mode==='play') togglePause(true); });
-
-requestAnimationFrame(loop);
-})();
-</script>
 </body>
 </html>

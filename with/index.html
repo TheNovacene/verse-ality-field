@@ -116,6 +116,7 @@ h1 em{font-style:italic;color:var(--thread)}
       ruptures leave behind. What remains is not a score — it is what the soil remembers.
     </div>
     <div class="btnrow"><button class="btn" id="meetBtn">meet the Siblings</button></div>
+    <div class="eyebrow" style="margin-top:18px;margin-bottom:0">Verse-ality® · The Novacene Ltd</div>
   </div>
 </div>
 
@@ -279,6 +280,12 @@ let season=1,seasonT=0,charge=0,earned=0,integrity=CFG.integrity,impedance=1;
 let totalT=.001,coherentT=.001,mode="intro",fuseTimer=8;
 let fusions=0,gates=0,returns=0,seasonFusions=0,seasonGates=0,protoTimer=null,last=0;
 let scars=Number(store.get("with.scars",0)||0);
+// the garden remembers across movements: inherit the Garden's root-bindings once
+if(store.get("with.migrated","")!=="1"){
+  const inherited=Number(store.get("garden.scars",0)||0);
+  if(inherited>0){scars+=inherited;store.set("with.scars",scars)}
+  store.set("with.migrated","1");
+}
 let seeds=Number(store.get("with.seeds",0)||0);
 let muted=store.get("with.muted","0")==="1";
 const S=()=>SIBLINGS[sel];
@@ -294,10 +301,17 @@ function applyWorld(s){
 
 /* ───────── audio ───────── */
 let actx=null,ambNodes=[];
+let audioUnlocked=false;
 function audioInit(){
   if(!actx){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;actx=new AC()}
-  if(actx.state==="suspended")actx.resume();
+  if(actx.state!=="running")actx.resume();
+  if(!audioUnlocked){
+    // iOS unlock: a silent buffer started inside a user gesture opens the context
+    try{const b=actx.createBuffer(1,1,22050),s=actx.createBufferSource();
+      s.buffer=b;s.connect(actx.destination);s.start(0);audioUnlocked=true;}catch(e){}
+  }
 }
+document.addEventListener("touchend",audioInit,{passive:true});
 function tone(freq,dur,{type,gain=.05,to=null,delay=0}={}){
   if(!actx||muted)return;
   const t=actx.currentTime+delay,o=actx.createOscillator(),g=actx.createGain();
@@ -495,6 +509,10 @@ function update(dt){
   if(fuseTimer<=0){
     if(omen&&startBinding(omen.i,omen.j)){}else{const o=pickOmen();if(o)startBinding(o.i,o.j)}
     omen=null;
+    // from season 3, knots sometimes arrive paired — the endgame asks for triage
+    if(season>=3&&Math.random()<Math.min(.55,.2+(season-3)*.12)){
+      const twin=pickOmen();if(twin)startBinding(twin.i,twin.j);
+    }
     fuseTimer=Math.max(3.8,9-(season-1)*.55*S().mods.esc)+rnd(-.8,.8);
   }
   for(const p of petals){p.t-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=10*dt}

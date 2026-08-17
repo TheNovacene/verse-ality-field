@@ -5,7 +5,9 @@ to disappear into another.
 
 **[Play The Garden →](https://thenovacene.github.io/verse-ality-field/garden/)** · the second movement
 **[Play WITH →](https://thenovacene.github.io/verse-ality-field/with/)** · the third movement
-**[Play The Field →](https://thenovacene.github.io/verse-ality-field/)** · the original prototype
+**[Play The Field →](https://thenovacene.github.io/verse-ality-field/field/)** · the first movement
+
+The root of the site is a landing page naming the three movements: https://thenovacene.github.io/verse-ality-field/
 
 > The field holds while you hold the field.
 
