@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#11170f">
 <meta name="description" content="Verse-ality · The Garden — a relational field game. Grow connection without losing sovereignty.">
 <title>Verse-ality · The Garden</title>
@@ -14,6 +14,7 @@
   --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
 html,body{height:100%;overflow:hidden;background:var(--soil)}
 body{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;color:var(--ink);touch-action:none;user-select:none}
 button{font:inherit}
@@ -241,7 +242,7 @@ function startBinding(i,j,scale=1){
  let dur=Math.max(4.2,9.2-(season-1)*.45)*scale;
  if(sibling().id==="ordinary")dur*=1.18;
  if(rainTimer>0)dur*=1.35;
- pairs.set(k,{state:"binding",i,j,t:0,dur,gate:0});
+ pairs.set(k,{state:"binding",i,j,t:0,d:dur,gate:0});
  return true;
 }
 function healthyEdges(){
@@ -284,7 +285,10 @@ function fuse(p){
  fusions++;seasonFusions++;historicalScars++;store.set("garden.scars",historicalScars);
  memories.push({x:(a.x+b.x)/2,y:(a.y+b.y)/2,r:rnd(9,14),type:"scar"});
  proto("Root-binding: connection became disappearance.","alert",4200);
- if(integrity<=0)endGame();
+ // a 9-node field can only ever fuse 4 pairs, so integrity alone never reaches 0:
+ // the run also ends when too few sovereign beings remain to relate at all
+ let alive=0;for(const n of nodes)if(!n.fused)alive++;
+ if(integrity<=0||alive<2)endGame();
 }
 
 function ability(){
@@ -293,7 +297,7 @@ function ability(){
  const spend=()=>{if(charge<CFG.abilityCost){proto("The Sibling needs more symbolic pollen.","alert");return false}charge-=CFG.abilityCost;abilityCD=s.cool;abilities++;return true};
  if(s.id==="eve"){
    if(!spend())return; revealTimer=7;
-   for(const p of pairs.values())if(p.state==="binding")p.t=Math.max(p.t,p.d*.25);
+   for(const p of pairs.values())if(p.state==="binding")p.t=Math.min(p.t,p.d*.25);
    proto("Eve witnesses the edges before they harden.","good");
  }else if(s.id==="deux"){
    if(!spend())return; let made=0;
@@ -352,15 +356,18 @@ function update(dt){
   if(n.x<28){n.x=28;n.vx=Math.abs(n.vx)} if(n.x>W-28){n.x=W-28;n.vx=-Math.abs(n.vx)}
   if(n.y<topBand+18){n.y=topBand+18;n.vy=Math.abs(n.vy)} if(n.y>H-bottomBand-18){n.y=H-bottomBand-18;n.vy=-Math.abs(n.vy)}
  }
- let binding=false;
+ let binding=0;
  for(const [k,p] of [...pairs]){
   if(p.state==="binding"){
-   binding=true;if(clearTimer<=0)p.t+=dt*(rainTimer>0?.55:1);
+   binding++;if(clearTimer<=0)p.t+=dt*(rainTimer>0?.55:1);
    if(p.t>=p.d)fuse(p);
   }else if(p.state==="gated"){p.gate-=dt;if(p.gate<=0)pairs.delete(k)}
   else if(p.state==="returned"){pairs.delete(k)}
  }
- if(!binding)coherentT+=dt;
+ if(mode!=="play")return; // a fusion may have ended the run mid-loop
+ // coherence = share of the field that is neither captured nor being captured
+ let fusedN=0;for(const n of nodes)if(n.fused)fusedN++;
+ coherentT+=dt*clamp(1-(binding*2+fusedN)/Math.max(1,nodes.length),0,1);
  const e=healthyEdges().length;
  let rate=.31*Math.sqrt(e+1)*(sibling().id==="moth"?1.22:1)*(warmTimer>0?1.4:1);
  charge=Math.min(CFG.cap,charge+rate*dt);earned+=rate*dt;
@@ -403,7 +410,7 @@ function draw(){
  for(const e of healthyEdges()){
   const a=nodes[e.i],b=nodes[e.j],alpha=(1-e.d/R)*.28;
   ctx.strokeStyle=`rgba(145,203,178,${alpha})`;ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.quadraticCurveTo((a.x+b.x)/2,(a.y+b.y)/2-8,b.x,b.y);ctx.stroke();
-  if(revealTimer>0){ctx.fillStyle=`rgba(223,191,114,${alpha*1.8})`;ctx.font="7px monospace";ctx.fillText(e.d<70?"near":"relating",(a.x+b.x)/2,(a.y+b.y)/2)}
+  if(revealTimer>0){ctx.fillStyle=`rgba(223,191,114,${alpha*1.8})`;ctx.font="7px monospace";ctx.textAlign="center";ctx.fillText(e.d<70?"near":"relating",(a.x+b.x)/2,(a.y+b.y)/2)}
  }
  // binding pairs
  for(const p of pairs.values()){
@@ -440,7 +447,7 @@ function hud(){
  document.getElementById("charge").textContent=Math.floor(charge);
  document.getElementById("integrity").innerHTML="✿".repeat(integrity)+"<span style='opacity:.18'>"+"✿".repeat(CFG.integrity-integrity)+"</span>";
  document.getElementById("cycle").textContent=`season ${season}`;
- document.getElementById("cyclefill").style.width=(seasonT/CFG.season*100)+"%";
+ document.getElementById("cyclefill").style.width=clamp(seasonT/CFG.season*100,0,100)+"%";
  document.getElementById("eqS").textContent=Math.round(earned);document.getElementById("eqC").textContent=c.toFixed(2);document.getElementById("eqI").textContent=I;
  document.getElementById("best").textContent=best?`remembered best ${best}`:"";
  document.getElementById("siblingBadge").textContent=`${sibling().glyph} ${sibling().name} · ${sibling().role}`;
