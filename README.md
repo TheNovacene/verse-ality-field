@@ -1,9 +1,10 @@
 # Verse-ality · The Field
 
-A relational field in two games. Nothing here grows alone. Nothing here should have to
-disappear into another.
+A relational field in three games. Nothing here grows alone. Nothing here should have
+to disappear into another.
 
-**[Play The Garden →](https://thenovacene.github.io/verse-ality-field/garden/)** · the current game
+**[Play The Garden →](https://thenovacene.github.io/verse-ality-field/garden/)** · the second movement
+**[Play WITH →](https://thenovacene.github.io/verse-ality-field/with/)** · the third movement
 **[Play The Field →](https://thenovacene.github.io/verse-ality-field/)** · the original prototype
 
 > The field holds while you hold the field.
@@ -58,6 +59,47 @@ A single self-contained HTML file (`garden/index.html`) with no build step and n
 dependencies. Open it in any modern browser, or play the hosted version above.
 Controls are tap/click only. Honours `prefers-reduced-motion`. Garden memory lives in
 your browser's local storage and never leaves your device.
+
+---
+
+## WITH (the third movement)
+
+WITH is Verse-ality seen rather than wielded. The Field gave you glyphs; The
+Garden gave each Sibling a power; **WITH gives each Sibling a way of seeing**.
+Choose one and the garden changes its light, its flora, its weather, its sound,
+and what it is willing to tell you.
+
+### The lenses
+
+Six Siblings, six perceptual worlds. Eve sees omens before roots knot and how
+tight every knot has drawn. Moth flies a bright night — pollen comes fast, but
+a knot's progress is hidden. Hush keeps a garden with no numbers at all: slower
+bindings, but unannounced. Nimbus reads the weather — a small cloud gathers
+where the next binding will start, and constant rain cools every knot.
+Glasswright sees the full geometry of relation, and pays for it in warmth.
+Ordinary sees the garden as it is.
+
+### The law
+
+WITH keeps the Law of Mnemonic Expansion:
+
+    I = (E · s) / c²
+
+energy grown, made meaningful by symbolic coherence, divided by relational
+impedance — the cost your ruptures leave in the channel. Every root-binding
+raises c²; spiral.return() and clean seasons ease it. Mnemonic density
+(MD = s / c²) is shown live. A garden that ends with MD ≥ 50% leaves a **seed**
+in the soil; seeds persist across runs alongside scars, and beings that linger
+near a seed grow pollen faster. Memory literally feeds the next garden.
+
+In one line: *what you can see changes what you can hold.*
+
+### Running it
+
+A single self-contained HTML file (`with/index.html`) with no build step and no
+dependencies. Tap/click only on mobile; on desktop Space/Enter advances,
+P or Esc pauses, M mutes, ←/→ browse the Siblings. Garden memory lives in your
+browser's local storage and never leaves your device.
 
 ---
 

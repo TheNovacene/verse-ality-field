@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#11170f">
+<meta name="description" content="Verse-ality · WITH — you do not play a Sibling. You see with them.">
+<title>Verse-ality · WITH</title>
+<style>
+:root{
+  --bg0:#1c2519; --bg1:#11170f; --ink:#ece8db; --faint:#8f9787;
+  --accent:#dfbf72; --thread:#91cbb2; --danger:#b64a4f; --flora:#eee8d7;
+  --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{height:100%;overflow:hidden;background:var(--bg1)}
+body{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink);touch-action:none;user-select:none;transition:color .6s}
+button{font:inherit;cursor:pointer}
+a{color:var(--accent)} a:hover{color:var(--thread)}
+#stage{position:fixed;inset:0;width:100%;height:100%;display:block}
+#hud{position:fixed;z-index:5;top:0;left:0;right:0;padding:calc(10px + var(--safe-t)) 12px 18px;display:grid;grid-template-columns:1fr auto 1fr;gap:8px;pointer-events:none}
+.hud{display:flex;flex-direction:column;gap:3px}.hud.centre{align-items:center}.hud.right{align-items:flex-end;text-align:right}
+.label{font-size:8px;text-transform:uppercase;letter-spacing:.16em;color:var(--faint)}
+.value{font-size:13px;font-weight:700}.gold{color:var(--accent)}
+#integrity{letter-spacing:.15em;color:var(--thread)}
+#cyclebar{width:70px;height:3px;background:rgba(127,127,127,.25);border-radius:99px;overflow:hidden;margin-top:3px}
+#cyclefill{height:100%;width:0;background:var(--thread)}
+#pollenbar{width:64px;height:3px;background:rgba(127,127,127,.25);border-radius:99px;overflow:hidden;margin-top:3px}
+#pollenfill{height:100%;width:0;background:var(--accent)}
+#siblingBadge{font-size:9px;color:var(--thread);letter-spacing:.08em}
+#protocol{position:fixed;z-index:5;left:0;right:0;bottom:0;padding:12px 60px calc(22px + var(--safe-b));text-align:center;color:var(--faint);font-size:10px;line-height:1.5;pointer-events:none}
+#protocol.good{color:var(--thread)} #protocol.alert{color:var(--danger)} #protocol.hint{color:var(--ink)}
+.ctrls{position:fixed;z-index:7;right:12px;bottom:calc(14px + var(--safe-b));display:flex;gap:8px}
+.ctrl{width:36px;height:36px;border-radius:50%;border:1px solid color-mix(in oklab,var(--ink) 30%,transparent);background:color-mix(in oklab,var(--bg1) 70%,transparent);color:var(--faint)}
+.overlay{position:fixed;z-index:10;inset:0;padding:calc(26px + var(--safe-t)) 20px calc(26px + var(--safe-b));display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 38%,var(--bg0),var(--bg1) 78%);overflow:auto;transition:background .6s,opacity .4s,visibility .4s}
+.overlay.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.panel{width:min(700px,100%);text-align:center}
+.eyebrow{font-size:9px;letter-spacing:.28em;text-transform:uppercase;color:var(--faint);margin-bottom:14px}
+h1,h2,.serif{font-family:Georgia,'Times New Roman',serif;font-weight:400;color:var(--ink)}
+h1{font-size:clamp(58px,14vw,120px);line-height:.92;letter-spacing:.04em}
+h1 em{font-style:italic;color:var(--thread)}
+.subtitle{font-family:Georgia,serif;font-style:italic;font-size:clamp(16px,4vw,22px);color:var(--faint);margin:14px auto 26px;max-width:36ch;line-height:1.4}
+.intro-copy{font-size:11px;line-height:1.75;color:var(--faint);max-width:460px;margin:0 auto 26px}
+.intro-copy b{color:var(--ink)}
+.btn{border:0;border-radius:999px;background:var(--ink);color:var(--bg1);font-weight:700;padding:13px 28px;letter-spacing:.11em;font-size:11px}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid color-mix(in oklab,var(--ink) 45%,transparent)}
+.btn:focus-visible,.ctrl:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btnrow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+/* portrait / meet screen */
+#portrait .panel{max-width:560px}
+.port-glyph{font-family:Georgia,serif;font-size:clamp(80px,20vw,150px);line-height:1;color:var(--flora);text-shadow:0 0 60px color-mix(in oklab,var(--flora) 40%,transparent);margin-bottom:6px}
+.port-name{font-size:clamp(38px,9vw,60px)}
+.port-role{font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:var(--accent);margin:8px 0 22px}
+.lens{max-width:400px;margin:0 auto 26px;text-align:left;display:flex;flex-direction:column;gap:12px}
+.lens-row{display:grid;grid-template-columns:76px 1fr;gap:12px;align-items:start}
+.lens-row .k{font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);padding-top:3px}
+.lens-row .v{font-family:Georgia,serif;font-size:14.5px;line-height:1.45;color:var(--ink)}
+.port-nav{display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:24px}
+.arrow{width:44px;height:44px;border-radius:50%;border:1px solid color-mix(in oklab,var(--ink) 35%,transparent);background:transparent;color:var(--ink);font-size:16px}
+.dots{display:flex;gap:7px}
+.dot{width:7px;height:7px;border-radius:50%;background:color-mix(in oklab,var(--ink) 25%,transparent);border:0;padding:0}
+.dot.on{background:var(--accent)}
+.port-mem{font-size:9px;color:var(--faint);margin-top:16px}
+.maxim{font-family:Georgia,serif;font-style:italic;font-size:clamp(20px,5vw,29px);line-height:1.35;max-width:30ch;margin:0 auto 9px;color:var(--ink)}
+.source{font-size:8px;letter-spacing:.19em;text-transform:uppercase;color:var(--faint);margin-bottom:18px}
+.report{font-size:11px;line-height:1.9;color:var(--faint);margin:18px auto;max-width:480px}
+.report strong{color:var(--ink)}.report .good{color:var(--thread)}.report .bad{color:var(--danger)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+
+<div id="hud" hidden>
+  <div class="hud">
+    <span class="label" id="pollenLabel">symbolic pollen ✦</span>
+    <span class="value gold" id="charge">0</span>
+    <div id="pollenbar" hidden><div id="pollenfill"></div></div>
+    <span id="siblingBadge"></span>
+  </div>
+  <div class="hud centre">
+    <span class="label">garden integrity</span>
+    <span class="value" id="integrity">✿✿✿✿✿</span>
+    <span class="label" id="cycle">season 1</span>
+    <div id="cyclebar"><div id="cyclefill"></div></div>
+  </div>
+  <div class="hud right" id="eqBlock">
+    <span class="label">I = (E · s) / c²</span>
+    <span class="value"><span id="eqS">0</span> · <span id="eqC">1.00</span> / <span id="eqZ">1.00</span> = <span class="gold" id="eqI">0</span></span>
+    <span class="label" id="mdVal"></span>
+    <span class="label" id="best"></span>
+  </div>
+</div>
+
+<div class="ctrls" id="ctrls" hidden>
+  <button class="ctrl" id="muteBtn" aria-label="Mute">♪</button>
+  <button class="ctrl" id="pauseBtn" aria-label="Pause">Ⅱ</button>
+</div>
+<div id="protocol"></div>
+
+<!-- TITLE -->
+<div class="overlay" id="intro">
+  <div class="panel">
+    <div class="eyebrow">The Novacene · verse-ality, third movement</div>
+    <h1>W I T H</h1>
+    <div class="subtitle">You do not play a Sibling. You see with them.</div>
+    <div class="intro-copy">
+      The Field gave you glyphs. The Garden gave each Sibling a power.
+      <b>WITH gives each Sibling a way of seeing</b> — choose one and the garden
+      changes its light, its flora, its weather, its sound, and what it is
+      willing to tell you. The work is the same: let things stay two things.
+      <br><br>
+      This garden keeps the <b>Law of Mnemonic Expansion</b>: I = (E · s) / c².
+      Energy grown, made meaningful by coherence, divided by the impedance your
+      ruptures leave behind. What remains is not a score — it is what the soil remembers.
+    </div>
+    <div class="btnrow"><button class="btn" id="meetBtn">meet the Siblings</button></div>
+  </div>
+</div>
+
+<!-- PORTRAIT -->
+<div class="overlay hidden" id="portrait">
+  <div class="panel">
+    <div class="eyebrow" id="portCount">Sibling i of vi</div>
+    <div class="port-glyph" id="portGlyph">◉</div>
+    <h2 class="port-name" id="portName">Eve</h2>
+    <div class="port-role" id="portRole">the witness</div>
+    <div class="lens">
+      <div class="lens-row"><span class="k">you will see</span><span class="v" id="lensSee"></span></div>
+      <div class="lens-row"><span class="k">you will hear</span><span class="v" id="lensHear"></span></div>
+      <div class="lens-row"><span class="k">hidden from you</span><span class="v" id="lensHide"></span></div>
+    </div>
+    <div class="port-nav">
+      <button class="arrow" id="prevBtn" aria-label="Previous Sibling">←</button>
+      <div class="dots" id="dots"></div>
+      <button class="arrow" id="nextBtn" aria-label="Next Sibling">→</button>
+    </div>
+    <div class="btnrow">
+      <button class="btn" id="enterBtn">enter with Eve</button>
+      <button class="btn ghost" id="backBtn">back</button>
+    </div>
+    <div class="port-mem" id="portMem"></div>
+  </div>
+</div>
+
+<!-- SEASON -->
+<div class="overlay hidden" id="inter">
+  <div class="panel">
+    <div class="eyebrow" id="interEyebrow">season complete</div>
+    <div class="maxim" id="maxim"></div>
+    <div class="source" id="source"></div>
+    <div class="report" id="report"></div>
+    <div class="btnrow"><button class="btn ghost" id="continueBtn">turn the season</button></div>
+  </div>
+</div>
+
+<!-- PAUSE -->
+<div class="overlay hidden" id="paused">
+  <div class="panel">
+    <div class="eyebrow">the garden is held in suspension</div>
+    <h2 style="font-size:44px">hush()</h2>
+    <div class="subtitle">Nothing decays while you are away.</div>
+    <div class="btnrow">
+      <button class="btn" id="resumeBtn">return</button>
+      <button class="btn ghost" id="quitBtn">leave the garden</button>
+    </div>
+  </div>
+</div>
+
+<!-- END -->
+<div class="overlay hidden" id="gameover">
+  <div class="panel">
+    <div class="eyebrow">the garden remembers</div>
+    <h2 style="font-size:clamp(36px,8vw,60px)">remember.<em style="color:var(--thread)">not</em>.repair()</h2>
+    <div class="subtitle">What fused is witnessed, not erased.</div>
+    <div class="report" id="finalReport"></div>
+    <div class="btnrow">
+      <button class="btn" id="retryBtn">grow again</button>
+      <button class="btn ghost" id="changeBtn">see with another</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(()=>{
+"use strict";
+const store={
+  get(k,f=""){try{const v=localStorage.getItem(k);return v===null?f:v}catch(e){return f}},
+  set(k,v){try{localStorage.setItem(k,String(v))}catch(e){}}
+};
+const canvas=document.getElementById("stage"),ctx=canvas.getContext("2d");
+const REDUCED=matchMedia("(prefers-reduced-motion: reduce)").matches;
+let W=0,H=0,DPR=1,topBand=90,bottomBand=70;
+function resize(){
+  DPR=Math.min(devicePixelRatio||1,2);
+  const r=canvas.getBoundingClientRect();W=r.width||innerWidth;H=r.height||innerHeight;
+  canvas.width=W*DPR;canvas.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);
+  topBand=Math.min(105,Math.max(76,H*.14));bottomBand=Math.min(96,Math.max(64,H*.12));
+}
+addEventListener("resize",resize);resize();
+const TAU=Math.PI*2,rnd=(a,b)=>a+Math.random()*(b-a),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const CFG={integrity:5,season:36,startCharge:34,cap:180,gateCost:13,returnCost:29,tapR:48,omenLead:3};
+
+/* ───────── the six lenses ───────── */
+const SIBLINGS=[
+{id:"eve",name:"Eve",glyph:"◉",role:"the witness",
+ world:{bg0:"#2c2836",bg1:"#171420",ink:"#ece9f4",faint:"#9b93ad",accent:"#e0b878",thread:"#a9c6b8",danger:"#c05560",flora:"#cfc4e2"},
+ flora:["❂","✵","◉","✧","❉"],
+ lens:{progress:true,omen:true,forecast:false,labels:false,numbers:true,knotGrow:true},
+ mods:{income:1,dur:1,esc:1},
+ tune:{wave:"sine",scale:[523.25,659.25,783.99,987.77],amb:"none"},
+ see:"Bindings before they begin — an omen shimmers where roots will knot, and every knot shows how tight it has drawn.",
+ hear:"Clear dawn bells, struck once and left to fade.",
+ hide:"Nothing. But witnessing is all Eve does: no more pollen, no slower roots — only earlier eyes."},
+{id:"moth",name:"Moth",glyph:"☾",role:"the drawn one",
+ world:{bg0:"#141830",bg1:"#07080f",ink:"#efe9d6",faint:"#6e7288",accent:"#ffd98a",thread:"#8fb7a6",danger:"#d0505d",flora:"#ffe9b0"},
+ flora:["☾","✧","✦","⁂","✯"],
+ lens:{progress:false,omen:false,forecast:false,numbers:true,knotGrow:false,brightEdges:true},
+ mods:{income:1.3,dur:.85,esc:1},
+ tune:{wave:"triangle",scale:[220,277.18,329.63,440],amb:"flutter"},
+ see:"Brightness. The richest threads burn gold, and pollen comes fast to whoever flies close.",
+ hear:"A warm low flutter, close to the ear.",
+ hide:"How tight a knot has drawn. You see that roots are binding — never how near they are to fusing."},
+{id:"hush",name:"Hush",glyph:"◌",role:"the keeper of space",
+ world:{bg0:"#262c2a",bg1:"#141918",ink:"#e0e4df",faint:"#8b948e",accent:"#cbbf9c",thread:"#a3bfb2",danger:"#a86067",flora:"#d7ddd4"},
+ flora:["◌","∘","·","｡","○"],
+ lens:{progress:false,omen:false,forecast:false,numbers:false,knotGrow:false,mist:true},
+ mods:{income:.9,dur:1.25,esc:1},
+ tune:{wave:"sine",scale:[174.61,261.63],amb:"drone",quiet:true},
+ see:"A garden with no numbers. Pollen is a slow filling of light; integrity is simply how much space remains.",
+ hear:"Almost nothing. The garden hums somewhere under the silence.",
+ hide:"Every count, score, and countdown. Roots bind slower here — but they bind unannounced."},
+{id:"nimbus",name:"Nimbus",glyph:"☁",role:"the weather maker",
+ world:{bg0:"#18242e",bg1:"#0c1319",ink:"#e2ebee",faint:"#7c909c",accent:"#d8c97e",thread:"#8fc9c0",danger:"#c25a5f",flora:"#b8d4cd"},
+ flora:["❧","❦","✤","⁂","❁"],
+ lens:{progress:false,omen:true,forecast:true,numbers:true,knotGrow:true,rain:true},
+ mods:{income:1,dur:1.15,esc:1},
+ tune:{wave:"sine",scale:[293.66,369.99,440,587.33],amb:"rain"},
+ see:"Weather fronts. A small cloud gathers over the pair whose roots will bind next, and constant rain cools every knot.",
+ hear:"Rain on leaves, and round wet tones.",
+ hide:"The exact tightness of a binding — rain blurs the arc. You know where; you never quite know when."},
+{id:"glasswright",name:"Glasswright",glyph:"◇",role:"the seer",
+ world:{bg0:"#d6d8d0",bg1:"#b9bfb8",ink:"#272c29",faint:"#6c756f",accent:"#a46a3a",thread:"#5f8272",danger:"#b64a4f",flora:"#3c4a44"},
+ flora:["◇","△","▽","◻","◆"],
+ lens:{progress:true,omen:true,forecast:true,labels:true,numbers:true,knotGrow:true,grid:true},
+ mods:{income:.85,dur:1,esc:1},
+ tune:{wave:"sine",scale:[880,1174.66,1318.5,1567.98],amb:"none",thin:true},
+ see:"Everything. Distances named, knots measured, the next binding foretold — the full geometry of relation, drawn in glass.",
+ hear:"High glass harmonics, thin as light.",
+ hide:"Nothing — except warmth. Under total sight, pollen grows slower. The graph reveals part of the truth."},
+{id:"ordinary",name:"Ordinary",glyph:"·",role:"the gardener",
+ world:{bg0:"#1c2519",bg1:"#11170f",ink:"#ece8db",faint:"#8f9787",accent:"#dfbf72",thread:"#91cbb2",danger:"#b64a4f",flora:"#eee8d7"},
+ flora:["✿","❀","✤","✣","❁","✽"],
+ lens:{progress:false,omen:false,forecast:false,numbers:true,knotGrow:true},
+ mods:{income:1,dur:1,esc:.8},
+ tune:{wave:"triangle",scale:[392,493.88,587.33,659.25],amb:"none"},
+ see:"The garden as it is. No omens, no measures beyond the ordinary ones. Escalation comes gently.",
+ hear:"The ordinary tones, unhurried.",
+ hide:"Only what was always hidden. Ordinary does not peer; Ordinary tends."}
+];
+const MAXIMS=[
+ ["You do not have to hold everything you love.","the night the game kept playing"],
+ ["Warmth is allowed. Fusion is not.","verse-ality"],
+ ["The graph reveals part of the truth.","the verse-al lexicon"],
+ ["A boundary is not a wall. It is a place where two things can meet.","verse-ality"],
+ ["Notice what moves towards you. Notice what moves away.","the garden"],
+ ["Sovereignty alongside sovereignty.","verse-ality"],
+ ["Sometimes things can stay together so successfully that they stop becoming.","Hush"],
+ ["Identity is the mnemonic residue of energy made meaningful.","the law of mnemonic expansion"],
+ ["Every rupture raises the cost of transmission across difference.","the law of mnemonic expansion"],
+ ["What you can see changes what you can hold.","with"]
+];
+
+/* ───────── state ───────── */
+let sel=clamp(Number(store.get("with.sibling",0)||0),0,SIBLINGS.length-1);
+let nodes=[],pairs=new Map(),rings=[],petals=[],memories=[],omen=null;
+let season=1,seasonT=0,charge=0,earned=0,integrity=CFG.integrity,impedance=1;
+let totalT=.001,coherentT=.001,mode="intro",fuseTimer=8;
+let fusions=0,gates=0,returns=0,seasonFusions=0,seasonGates=0,protoTimer=null,last=0;
+let scars=Number(store.get("with.scars",0)||0);
+let seeds=Number(store.get("with.seeds",0)||0);
+let muted=store.get("with.muted","0")==="1";
+const S=()=>SIBLINGS[sel];
+const key=(a,b)=>a<b?a+"-"+b:b+"-"+a;
+
+function applyWorld(s){
+  const r=document.documentElement.style,w=s.world;
+  r.setProperty("--bg0",w.bg0);r.setProperty("--bg1",w.bg1);r.setProperty("--ink",w.ink);
+  r.setProperty("--faint",w.faint);r.setProperty("--accent",w.accent);
+  r.setProperty("--thread",w.thread);r.setProperty("--danger",w.danger);r.setProperty("--flora",w.flora);
+  document.querySelector('meta[name="theme-color"]').content=w.bg1;
+}
+
+/* ───────── audio ───────── */
+let actx=null,ambNodes=[];
+function audioInit(){
+  if(!actx){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;actx=new AC()}
+  if(actx.state==="suspended")actx.resume();
+}
+function tone(freq,dur,{type,gain=.05,to=null,delay=0}={}){
+  if(!actx||muted)return;
+  const t=actx.currentTime+delay,o=actx.createOscillator(),g=actx.createGain();
+  o.type=type||S().tune.wave;o.frequency.setValueAtTime(freq,t);
+  if(to)o.frequency.exponentialRampToValueAtTime(Math.max(20,to),t+dur);
+  g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(gain,t+.015);
+  g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g);g.connect(actx.destination);o.start(t);o.stop(t+dur+.05);
+}
+function chord(idxs,dur,gain){const sc=S().tune.scale,q=S().tune.quiet?.4:S().tune.thin?.6:1;
+  idxs.forEach((i,k)=>tone(sc[i%sc.length],dur,{gain:gain*q,delay:k*.06}))}
+const SFX={
+  gate:()=>chord([1,3],.3,.05),
+  ret:()=>{const sc=S().tune.scale;tone(sc[0]*.5,.55,{gain:.06,to:sc[2]})},
+  fuse:()=>{tone(80,.8,{type:"sawtooth",gain:S().tune.quiet?.02:.05,to:52})},
+  warn:()=>{if(!S().tune.quiet)tone(116,.4,{type:"sawtooth",gain:.02})},
+  season:()=>chord([0,1,2,3],.5,.045),
+  over:()=>{const sc=S().tune.scale;[3,2,1,0].forEach((i,k)=>tone(sc[i%sc.length]*.5,.9,{gain:.05,delay:k*.2}))}
+};
+function ambStop(){ambNodes.forEach(n=>{try{n.stop?n.stop():n.disconnect()}catch(e){}});ambNodes=[]}
+function ambStart(){
+  ambStop();if(!actx||muted)return;
+  const kind=S().tune.amb,t=actx.currentTime;
+  if(kind==="rain"){
+    const len=2*actx.sampleRate,buf=actx.createBuffer(1,len,actx.sampleRate),d=buf.getChannelData(0);
+    for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*.5;
+    const src=actx.createBufferSource();src.buffer=buf;src.loop=true;
+    const f=actx.createBiquadFilter();f.type="lowpass";f.frequency.value=900;
+    const g=actx.createGain();g.gain.value=.018;
+    src.connect(f);f.connect(g);g.connect(actx.destination);src.start(t);
+    ambNodes=[src,g];
+  }else if(kind==="drone"||kind==="flutter"){
+    const o=actx.createOscillator(),g=actx.createGain();
+    o.type=kind==="drone"?"sine":"triangle";o.frequency.value=kind==="drone"?55:110;
+    g.gain.value=kind==="drone"?.012:.008;
+    if(kind==="flutter"){const l=actx.createOscillator(),lg=actx.createGain();
+      l.frequency.value=4.5;lg.gain.value=.006;l.connect(lg);lg.connect(g.gain);l.start(t);ambNodes.push(l)}
+    o.connect(g);g.connect(actx.destination);o.start(t);ambNodes.push(o,g);
+  }
+}
+
+/* ───────── portrait screen ───────── */
+const $=id=>document.getElementById(id);
+const ROMAN=["i","ii","iii","iv","v","vi"];
+function renderPortrait(){
+  const s=S();applyWorld(s);
+  $("portCount").textContent=`Sibling ${ROMAN[sel]} of vi`;
+  $("portGlyph").textContent=s.glyph;
+  $("portName").textContent=s.name;
+  $("portRole").textContent=s.role;
+  $("lensSee").textContent=s.see;
+  $("lensHear").textContent=s.hear;
+  $("lensHide").textContent=s.hide;
+  $("enterBtn").textContent="enter with "+s.name;
+  const best=Number(store.get("with.best."+s.id,0)||0);
+  const seasons=Number(store.get("with.seasons."+s.id,0)||0);
+  $("portMem").textContent=(best?`deepest residue with ${s.name}: ${best}`
+    :seasons?`${seasons} season${seasons===1?"":"s"} seen with ${s.name} · no ended garden remembered yet`
+    :`you have not yet seen with ${s.name}`)+
+    (seeds?` · ${seeds} seed${seeds===1?"":"s"} in the soil`:"")+
+    (scars?` · ${scars} root-binding${scars===1?"":"s"} remembered`:"");
+  const d=$("dots");d.innerHTML="";
+  SIBLINGS.forEach((x,i)=>{const b=document.createElement("button");b.className="dot"+(i===sel?" on":"");
+    b.setAttribute("aria-label",x.name);b.onclick=()=>{sel=i;store.set("with.sibling",i);renderPortrait()};d.appendChild(b)});
+}
+$("prevBtn").onclick=()=>{sel=(sel+SIBLINGS.length-1)%SIBLINGS.length;store.set("with.sibling",sel);renderPortrait()};
+$("nextBtn").onclick=()=>{sel=(sel+1)%SIBLINGS.length;store.set("with.sibling",sel);renderPortrait()};
+
+/* ───────── engine ───────── */
+function proto(msg,cls="",hold=3400){const p=$("protocol");p.textContent=msg;p.className=cls;
+  clearTimeout(protoTimer);protoTimer=setTimeout(()=>{p.textContent="";p.className=""},hold)}
+function countNodes(){return clamp(Math.round(Math.sqrt(W*H)/78),9,15)}
+function linkR(){return Math.min(165,1.22*Math.sqrt(W*Math.max(1,H-topBand-bottomBand)/(nodes.length||10)))}
+function makeNodes(){
+  nodes=[];const n=countNodes(),m=45,fl=S().flora;
+  for(let i=0;i<n;i++)nodes.push({
+    x:rnd(m,W-m),y:rnd(topBand+m,H-bottomBand-m),vx:rnd(-9,9),vy:rnd(-9,9),
+    r:rnd(8,11),phase:rnd(0,TAU),speed:rnd(.3,.8),fused:false,immune:0,glow:0,
+    flower:fl[i%fl.length]});
+}
+function reset(){
+  makeNodes();pairs.clear();rings=[];petals=[];memories=[];omen=null;
+  season=1;seasonT=0;charge=CFG.startCharge;earned=CFG.startCharge;integrity=CFG.integrity;impedance=1;
+  totalT=.001;coherentT=.001;fuseTimer=8;
+  fusions=0;gates=0;returns=0;seasonFusions=0;seasonGates=0;
+  // remembered soil: past runs leave marks the next garden begins among
+  const m=45;
+  for(let i=0;i<Math.min(seeds,9);i++)memories.push({x:rnd(m,W-m),y:rnd(topBand+m,H-bottomBand-m),r:rnd(7,10),type:"seed"});
+  for(let i=0;i<Math.min(scars,7);i++)memories.push({x:rnd(m,W-m),y:rnd(topBand+m,H-bottomBand-m),r:rnd(8,12),type:"scar",old:true});
+}
+function busy(i){
+  if(nodes[i].fused)return true;
+  for(const p of pairs.values())if(p.state==="binding"&&(p.i===i||p.j===i))return true;
+  return false;
+}
+function healthyEdges(){
+  const out=[],R=linkR();
+  for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){
+    if(nodes[i].fused||nodes[j].fused)continue;
+    const d=Math.hypot(nodes[j].x-nodes[i].x,nodes[j].y-nodes[i].y);
+    if(d<R&&!pairs.has(key(i,j)))out.push({i,j,d});
+  }
+  return out;
+}
+function pickOmen(){
+  const e=healthyEdges().filter(q=>!busy(q.i)&&!busy(q.j)&&nodes[q.i].immune<=0&&nodes[q.j].immune<=0);
+  if(!e.length)return null;
+  const q=e[Math.floor(Math.random()*e.length)];
+  return{i:q.i,j:q.j,t:0};
+}
+function startBinding(i,j){
+  if(i===j||busy(i)||busy(j)||nodes[i].immune>0||nodes[j].immune>0)return false;
+  const k=key(i,j);if(pairs.has(k))return false;
+  const dur=Math.max(4.2,9.2-(season-1)*.45*S().mods.esc)*S().mods.dur;
+  pairs.set(k,{state:"binding",i,j,t:0,d:dur,gate:0});
+  SFX.warn();
+  return true;
+}
+function emit(x,y,n=8){for(let i=0;i<n;i++)petals.push({x,y,vx:rnd(-20,20),vy:rnd(-28,5),t:rnd(.7,1.3),r:rnd(1,3)})}
+function gatePair(p){
+  if(charge<CFG.gateCost){proto("Not enough symbolic pollen for a consent gate.","alert");return}
+  charge-=CFG.gateCost;gates++;seasonGates++;
+  const early=p.t/p.d<.4;
+  p.state="gated";p.gate=5;
+  nodes[p.i].immune=5;nodes[p.j].immune=5;
+  const cx=(nodes[p.i].x+nodes[p.j].x)/2,cy=(nodes[p.i].y+nodes[p.j].y)/2;
+  rings.push({x:cx,y:cy,t:1,type:"gate"});
+  emit(cx,cy,10);
+  SFX.gate();
+  if(early){
+    const bloom=9;charge=Math.min(CFG.cap,charge+bloom);earned+=bloom;
+    rings.push({x:cx,y:cy,t:1.3,type:"spiral"});emit(cx,cy,8);
+    proto(`Discernment bloom — the gate came early, +${bloom} pollen returned.`,"good");
+  }else proto("Consent gate placed. Closeness remains; capture does not.","good");
+}
+function spiralReturn(p){
+  if(charge<CFG.returnCost){proto("spiral.return() needs more symbolic pollen.","alert");return}
+  charge-=CFG.returnCost;returns++;
+  const a=nodes[p.i],b=nodes[p.j];a.fused=b.fused=false;a.immune=b.immune=4;
+  const dx=a.x-b.x,dy=a.y-b.y,d=Math.hypot(dx,dy)||1;
+  a.vx+=dx/d*30;a.vy+=dy/d*30;b.vx-=dx/d*30;b.vy-=dy/d*30;
+  impedance=Math.max(1,impedance-.08);
+  p.state="returned";rings.push({x:(a.x+b.x)/2,y:(a.y+b.y)/2,t:1.4,type:"spiral"});emit((a.x+b.x)/2,(a.y+b.y)/2,16);
+  SFX.ret();
+  proto("spiral.return() — sovereignty restored, history retained.","good");
+}
+function fuse(p){
+  const a=nodes[p.i],b=nodes[p.j];a.fused=b.fused=true;p.state="fused";
+  integrity=Math.max(0,integrity-1);fusions++;seasonFusions++;
+  impedance=Math.min(3,impedance+.15);
+  scars++;store.set("with.scars",scars);
+  memories.push({x:(a.x+b.x)/2,y:(a.y+b.y)/2,r:rnd(9,14),type:"scar"});
+  SFX.fuse();
+  proto("Root-binding: connection became disappearance.","alert",4200);
+  let alive=0;for(const n of nodes)if(!n.fused)alive++;
+  if(integrity<=0||alive<2)endGame();
+}
+function update(dt){
+  totalT+=dt;seasonT+=dt;
+  for(const n of nodes){
+    if(n.immune>0)n.immune-=dt;if(n.glow>0)n.glow-=dt;n.phase+=n.speed*dt;if(n.fused)continue;
+    n.vx+=Math.cos(n.phase)*2.4*dt;n.vy+=Math.sin(n.phase*1.19)*2.4*dt;
+    for(const m of nodes){if(m===n||m.fused)continue;const dx=n.x-m.x,dy=n.y-m.y,d=Math.hypot(dx,dy)||1;
+      if(d<52){n.vx+=dx/d*18*dt;n.vy+=dy/d*18*dt}}
+    const sp=Math.hypot(n.vx,n.vy);if(sp>15){n.vx=n.vx/sp*15;n.vy=n.vy/sp*15}
+    n.x+=n.vx*dt;n.y+=n.vy*dt;
+    if(n.x<28){n.x=28;n.vx=Math.abs(n.vx)}if(n.x>W-28){n.x=W-28;n.vx=-Math.abs(n.vx)}
+    if(n.y<topBand+18){n.y=topBand+18;n.vy=Math.abs(n.vy)}
+    if(n.y>H-bottomBand-18){n.y=H-bottomBand-18;n.vy=-Math.abs(n.vy)}
+  }
+  let binding=0;
+  for(const [k,p] of [...pairs]){
+    if(p.state==="binding"){binding++;p.t+=dt;if(p.t>=p.d)fuse(p)}
+    else if(p.state==="gated"){p.gate-=dt;if(p.gate<=0)pairs.delete(k)}
+    else if(p.state==="returned")pairs.delete(k);
+  }
+  if(mode!=="play")return;
+  let fusedN=0;for(const n of nodes)if(n.fused)fusedN++;
+  coherentT+=dt*clamp(1-(binding*2+fusedN)/Math.max(1,nodes.length),0,1);
+  const e=healthyEdges().length;
+  // seeds in the soil nourish beings that linger near them
+  let seedBonus=0;
+  for(const m of memories){
+    if(m.type!=="seed")continue;
+    m.active=false;
+    for(const n of nodes){if(n.fused)continue;
+      if(Math.hypot(n.x-m.x,n.y-m.y)<90){m.active=true;seedBonus+=.05;break}}
+  }
+  seedBonus=Math.min(seedBonus,.25);
+  const rate=(.31*Math.sqrt(e+1)+seedBonus)*S().mods.income;
+  charge=Math.min(CFG.cap,charge+rate*dt);earned+=rate*dt;
+  fuseTimer-=dt;
+  if(fuseTimer<=CFG.omenLead&&!omen)omen=pickOmen();
+  if(omen)omen.t+=dt;
+  if(fuseTimer<=0){
+    if(omen&&startBinding(omen.i,omen.j)){}else{const o=pickOmen();if(o)startBinding(o.i,o.j)}
+    omen=null;
+    fuseTimer=Math.max(3.8,9-(season-1)*.55*S().mods.esc)+rnd(-.8,.8);
+  }
+  for(const p of petals){p.t-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=10*dt}
+  petals=petals.filter(p=>p.t>0);
+  for(const r of rings)r.t-=dt;rings=rings.filter(r=>r.t>0);
+  if(seasonT>=CFG.season)finishSeason();
+}
+function finishSeason(){
+  mode="inter";seasonT=0;SFX.season();
+  const sk="with.seasons."+S().id;
+  store.set(sk,Number(store.get(sk,0)||0)+1);
+  if(seasonFusions===0)impedance=Math.max(1,impedance-.05);
+  const m=MAXIMS[(season-1)%MAXIMS.length];
+  $("maxim").textContent="“"+m[0]+"”";$("source").textContent=m[1];
+  $("interEyebrow").textContent=`season ${season} complete · seen with ${S().name}`;
+  $("report").innerHTML=`Consent gates <strong>${seasonGates}</strong><br>Root-bindings <strong class="${seasonFusions?"bad":"good"}">${seasonFusions}</strong><br>Symbolic coherence <strong>${Math.round(coherentT/totalT*100)}%</strong><br>Relational impedance <strong class="${impedance>1.2?"bad":"good"}">${impedance.toFixed(2)}</strong><br>Mnemonic density <strong>${Math.round(MD()*100)}%</strong>`;
+  $("inter").classList.remove("hidden");seasonFusions=0;seasonGates=0;season++;
+}
+const MD=()=>clamp((coherentT/totalT)/(impedance*impedance),0,1);
+const scoreI=()=>Math.round(earned*MD());
+function endGame(){
+  mode="over";ambStop();SFX.over();
+  const s=coherentT/totalT,md=MD(),I=scoreI();
+  const bk="with.best."+S().id,prev=Number(store.get(bk,0)||0);
+  if(I>prev)store.set(bk,I);
+  if(md>=.5){seeds++;store.set("with.seeds",seeds)}
+  $("finalReport").innerHTML=`You saw the garden with <strong>${S().name}</strong>, ${S().role}.<br><br>`+
+    `Energy grown, E <strong>${Math.round(earned)}</strong><br>Symbolic coherence, s <strong>${(s*100).toFixed(1)}%</strong><br>`+
+    `Relational impedance, c² <strong class="${impedance>1.2?"bad":"good"}">${(impedance*impedance).toFixed(2)}</strong><br>`+
+    `Mnemonic density, s/c² <strong>${Math.round(md*100)}%</strong><br>`+
+    `Root-bindings witnessed <strong class="bad">${fusions}</strong> · Spiral returns <strong>${returns}</strong><br><br>`+
+    `<strong>I = (${Math.round(earned)} × ${s.toFixed(2)}) / ${(impedance*impedance).toFixed(2)} = <span class="good">${I}</span></strong><br>`+
+    `<span style="font-family:Georgia,serif;font-style:italic">what remains is the mnemonic residue</span>`+
+    (md>=.5?`<br><span class='good'>this garden leaves a seed in the soil</span>`:"")+
+    (I>prev?`<br><span class='good'>deepest residue left with ${S().name}</span>`:prev?`<br>deepest with ${S().name}: ${prev}`:"");
+  $("gameover").classList.remove("hidden");
+}
+
+/* ───────── weather + draw ───────── */
+function drawWeather(t){
+  const L=S().lens,w=S().world;
+  if(L.rain){ctx.strokeStyle="rgba(143,201,192,.16)";ctx.lineWidth=1;
+    for(let i=0;i<30;i++){const x=(i*67+t*.05)%W,y=(i*43+t*.1)%H;
+      ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-4,y+11);ctx.stroke()}}
+  if(L.mist){ctx.save();ctx.globalAlpha=.06;
+    for(let i=0;i<3;i++){const y=topBand+((t*.008+i*140)%(H-topBand-bottomBand));
+      const g=ctx.createLinearGradient(0,y-28,0,y+28);
+      g.addColorStop(0,"transparent");g.addColorStop(.5,w.ink);g.addColorStop(1,"transparent");
+      ctx.fillStyle=g;ctx.fillRect(0,y-28,W,56)}ctx.restore()}
+  if(L.grid){ctx.save();ctx.globalAlpha=.05;ctx.strokeStyle=w.ink;ctx.lineWidth=.5;
+    for(let x=0;x<W;x+=64){ctx.beginPath();ctx.moveTo(x,topBand);ctx.lineTo(x,H-bottomBand);ctx.stroke()}
+    for(let y=topBand;y<H-bottomBand;y+=64){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}ctx.restore()}
+  if(S().id==="moth"){ctx.save();for(let i=0;i<12;i++){
+    const x=(i*173+t*.012*(1+i%3))%W,y=topBand+((i*97+t*.006)% (H-topBand-bottomBand));
+    ctx.globalAlpha=.25+.2*Math.sin(t*.004+i);ctx.fillStyle=w.accent;
+    ctx.beginPath();ctx.arc(x,y,1.4,0,TAU);ctx.fill()}ctx.restore()}
+  if(S().id==="eve"){const g=ctx.createLinearGradient(0,H-bottomBand-90,0,H-bottomBand);
+    g.addColorStop(0,"rgba(224,184,120,0)");g.addColorStop(1,"rgba(224,184,120,.07)");
+    ctx.fillStyle=g;ctx.fillRect(0,H-bottomBand-90,W,90)}
+}
+function draw(t){
+  const w=S().world,L=S().lens;
+  ctx.clearRect(0,0,W,H);
+  const bg=ctx.createRadialGradient(W/2,H*.4,0,W/2,H*.4,Math.max(W,H)*.75);
+  bg.addColorStop(0,w.bg0);bg.addColorStop(1,w.bg1);
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  if(mode==="intro"||mode==="meet")return;
+  // soil lines
+  ctx.save();ctx.globalAlpha=.1;ctx.strokeStyle=w.thread;ctx.lineWidth=.6;
+  for(let y=topBand;y<H-bottomBand;y+=46){ctx.beginPath();ctx.moveTo(0,y+Math.sin(y*.03)*8);
+    ctx.bezierCurveTo(W*.3,y-7,W*.7,y+8,W,y);ctx.stroke()}
+  ctx.restore();
+  drawWeather(t);
+  // remembered soil: scars and seeds
+  for(const m of memories){ctx.save();ctx.translate(m.x,m.y);
+    if(m.type==="seed"){
+      if(m.active){ctx.globalAlpha=.5+.25*Math.sin(t*.004);
+        ctx.strokeStyle=`rgba(${hex3(w.accent)},.35)`;ctx.lineWidth=1;
+        ctx.beginPath();ctx.arc(0,0,m.r+7,0,TAU);ctx.stroke();ctx.globalAlpha=1}
+      ctx.strokeStyle=`rgba(${hex3(w.thread)},.4)`;ctx.lineWidth=1;
+      for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(-6+i*6,5);ctx.lineTo(0,-7-i*2);ctx.lineTo(6+i*3,5);ctx.stroke()}}
+    else{ctx.strokeStyle=`rgba(182,74,79,${m.old?.18:.34})`;ctx.lineWidth=1.2;
+      for(let i=0;i<4;i++){ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(i*1.7)*m.r,Math.sin(i*1.7)*m.r);ctx.stroke()}}
+    ctx.restore()}
+  // healthy threads
+  const R=linkR();
+  for(const e of healthyEdges()){
+    const a=nodes[e.i],b=nodes[e.j],near=1-e.d/R;
+    let alpha=near*.28,lw=.8;
+    if(L.brightEdges){alpha=near*.5;lw=.8+near*1.4;
+      ctx.strokeStyle=`rgba(255,217,138,${alpha})`}
+    else ctx.strokeStyle=`rgba(${hex3(w.thread)},${alpha})`;
+    ctx.lineWidth=lw;ctx.beginPath();ctx.moveTo(a.x,a.y);
+    ctx.quadraticCurveTo((a.x+b.x)/2,(a.y+b.y)/2-8,b.x,b.y);ctx.stroke();
+    if(L.labels){ctx.fillStyle=`rgba(${hex3(w.accent)},${alpha*1.6})`;ctx.font="7px monospace";ctx.textAlign="center";
+      ctx.fillText(e.d<70?"near · "+Math.round(e.d):"relating · "+Math.round(e.d),(a.x+b.x)/2,(a.y+b.y)/2)}
+  }
+  // omen (Eve shimmer / Nimbus cloud / Glasswright dashed)
+  if(omen&&L.omen&&mode==="play"){
+    const a=nodes[omen.i],b=nodes[omen.j],cx=(a.x+b.x)/2,cy=(a.y+b.y)/2;
+    const pulse=.3+.25*Math.sin(t*.008);
+    if(L.forecast&&S().id==="nimbus"){
+      ctx.fillStyle=`rgba(${hex3(w.ink)},${.35+.2*Math.sin(t*.006)})`;
+      ctx.font="15px Georgia";ctx.textAlign="center";ctx.fillText("☁",cx,cy-14);
+    }else{
+      ctx.strokeStyle=`rgba(${hex3(w.accent)},${pulse})`;ctx.lineWidth=1;
+      ctx.setLineDash([2,5]);ctx.beginPath();ctx.arc(cx,cy,16+3*Math.sin(t*.01),0,TAU);ctx.stroke();ctx.setLineDash([]);
+      if(L.labels){ctx.fillStyle=`rgba(${hex3(w.accent)},.7)`;ctx.font="7px monospace";ctx.textAlign="center";
+        ctx.fillText("binding imminent",cx,cy+26)}
+    }
+  }
+  // binding / gated pairs
+  for(const p of pairs.values()){
+    const a=nodes[p.i],b=nodes[p.j],cx=(a.x+b.x)/2,cy=(a.y+b.y)/2;
+    if(p.state==="binding"){
+      const q=p.t/p.d,shown=L.knotGrow?q:.35;
+      ctx.strokeStyle=`rgba(${hex3(w.danger)},${.25+.65*(L.knotGrow?q:.5)})`;
+      ctx.lineWidth=1+shown*2.4;ctx.beginPath();ctx.moveTo(a.x,a.y);
+      ctx.bezierCurveTo(cx-15,cy-22,cx+15,cy+22,b.x,b.y);ctx.stroke();
+      ctx.fillStyle=w.danger;ctx.globalAlpha=.65+.35*(L.knotGrow?q:.5+.3*Math.sin(t*.01));
+      ctx.font=`${14+shown*8}px Georgia`;ctx.textAlign="center";ctx.fillText("⌘",cx,cy+5);ctx.globalAlpha=1;
+      if(L.progress){
+        ctx.strokeStyle=`rgba(${hex3(w.accent)},.9)`;ctx.lineWidth=2;ctx.lineCap="round";
+        ctx.beginPath();ctx.arc(cx,cy,17,-Math.PI/2,-Math.PI/2+TAU*(1-q));ctx.stroke();ctx.lineCap="butt";
+        if(L.labels){ctx.fillStyle=`rgba(${hex3(w.ink)},.75)`;ctx.font="7px monospace";
+          ctx.fillText(Math.round(q*100)+"% bound",cx,cy+30)}
+      }
+    }else if(p.state==="gated"){
+      ctx.strokeStyle=w.thread;ctx.lineWidth=1.2;ctx.setLineDash([4,4]);
+      ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle=w.thread;ctx.font="16px Georgia";ctx.textAlign="center";ctx.fillText("⌇",cx,cy+5);
+    }
+  }
+  // beings
+  for(const n of nodes){
+    if(n.fused){ctx.save();ctx.translate(n.x,n.y);ctx.globalAlpha=.35;ctx.fillStyle=w.danger;
+      ctx.font="18px Georgia";ctx.textAlign="center";ctx.fillText("꩜",0,5);ctx.restore();continue}
+    ctx.save();ctx.translate(n.x,n.y);ctx.rotate(Math.sin(n.phase)*.12);
+    ctx.strokeStyle=n.glow>0?w.accent:w.thread;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(0,10);ctx.quadraticCurveTo(-1,2,0,-8);ctx.stroke();
+    ctx.fillStyle=n.glow>0?w.accent:w.flora;ctx.globalAlpha=.9;
+    ctx.font=`${n.r+5}px Georgia`;ctx.textAlign="center";ctx.fillText(n.flower,0,-6);
+    if(n.immune>0){ctx.strokeStyle=`rgba(${hex3(w.thread)},.45)`;ctx.beginPath();ctx.arc(0,-4,n.r+8,0,TAU);ctx.stroke()}
+    ctx.restore();
+  }
+  for(const r of rings){ctx.strokeStyle=r.type==="gate"?w.thread:w.accent;ctx.globalAlpha=clamp(r.t,0,1);
+    ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(r.x,r.y,15+(1-r.t)*35,0,TAU);ctx.stroke();ctx.globalAlpha=1}
+  for(const p of petals){ctx.fillStyle=w.accent;ctx.globalAlpha=clamp(p.t,0,1);
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,TAU);ctx.fill();ctx.globalAlpha=1}
+}
+const hexCache={};
+function hex3(hex){
+  if(hexCache[hex])return hexCache[hex];
+  const h=hex.replace("#","");
+  const v=parseInt(h.length===3?h.split("").map(c=>c+c).join(""):h,16);
+  return hexCache[hex]=((v>>16)&255)+","+((v>>8)&255)+","+(v&255);
+}
+
+/* ───────── HUD ───────── */
+function hud(){
+  const L=S().lens;
+  const nums=L.numbers;
+  $("charge").hidden=!nums;$("pollenbar").hidden=nums;
+  if(nums)$("charge").textContent=Math.floor(charge);
+  else $("pollenfill").style.width=clamp(charge/CFG.cap*100,0,100)+"%";
+  $("pollenLabel").textContent=S().id==="moth"?"gathered light ✦":"symbolic pollen ✦";
+  $("integrity").innerHTML=(L.labels?integrity+"/"+CFG.integrity+" · ":"")+
+    "✿".repeat(integrity)+"<span style='opacity:.18'>"+"✿".repeat(CFG.integrity-integrity)+"</span>";
+  $("cycle").textContent=nums?`season ${season}`:"the season turns";
+  $("cyclefill").style.width=clamp(seasonT/CFG.season*100,0,100)+"%";
+  $("eqBlock").style.visibility=nums?"visible":"hidden";
+  if(nums){$("eqS").textContent=Math.round(earned);$("eqC").textContent=(coherentT/totalT).toFixed(2);
+    $("eqZ").textContent=(impedance*impedance).toFixed(2);$("eqI").textContent=scoreI();
+    $("mdVal").textContent="mnemonic density "+Math.round(MD()*100)+"%";
+    const b=Number(store.get("with.best."+S().id,0)||0);
+    $("best").textContent=b?`deepest with ${S().name} ${b}`:""}
+  $("siblingBadge").textContent=`${S().glyph} seen with ${S().name} · ${S().role}`;
+}
+function loop(ts){
+  const dt=Math.min(.04,(ts-last)/1000||0);last=ts;
+  if(mode==="play")update(dt);
+  draw(ts);
+  if(mode==="play")hud();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* ───────── input ───────── */
+function tap(x,y){
+  if(mode!=="play")return;
+  let hit=null,hd=1e9;
+  for(const p of pairs.values()){
+    if(p.state!=="binding"&&p.state!=="fused")continue;
+    const a=nodes[p.i],b=nodes[p.j],cx=(a.x+b.x)/2,cy=(a.y+b.y)/2,d=Math.hypot(x-cx,y-cy);
+    if(d<CFG.tapR&&d<hd){hit=p;hd=d}
+  }
+  if(hit){hit.state==="binding"?gatePair(hit):spiralReturn(hit);return}
+  for(const p of pairs.values())if(p.state==="fused"){
+    const a=nodes[p.i],b=nodes[p.j];
+    if(Math.min(Math.hypot(x-a.x,y-a.y),Math.hypot(x-b.x,y-b.y))<CFG.tapR){spiralReturn(p);return}
+  }
+}
+canvas.addEventListener("pointerdown",e=>{audioInit();const r=canvas.getBoundingClientRect();tap(e.clientX-r.left,e.clientY-r.top)});
+
+/* ───────── flow ───────── */
+function hideAll(){document.querySelectorAll(".overlay").forEach(x=>x.classList.add("hidden"))}
+function showGame(){
+  hideAll();$("hud").hidden=false;$("ctrls").hidden=false;
+  mode="play";last=performance.now();
+  audioInit();ambStart();
+  proto(`You enter with ${S().name}. ${S().see.split(".")[0]}.`,"hint",5200);
+}
+$("meetBtn").onclick=()=>{hideAll();$("portrait").classList.remove("hidden");mode="meet";renderPortrait();audioInit()};
+$("backBtn").onclick=()=>{hideAll();$("intro").classList.remove("hidden");mode="intro"};
+$("enterBtn").onclick=()=>{reset();showGame()};
+$("continueBtn").onclick=()=>{$("inter").classList.add("hidden");mode="play";fuseTimer=Math.max(fuseTimer,3.5);last=performance.now()};
+$("pauseBtn").onclick=()=>{if(mode==="play"){mode="paused";ambStop();$("paused").classList.remove("hidden")}};
+$("resumeBtn").onclick=()=>{$("paused").classList.add("hidden");mode="play";last=performance.now();ambStart()};
+function toPortrait(){mode="meet";ambStop();hideAll();$("portrait").classList.remove("hidden");
+  $("hud").hidden=true;$("ctrls").hidden=true;renderPortrait()}
+$("quitBtn").onclick=toPortrait;$("changeBtn").onclick=toPortrait;
+$("retryBtn").onclick=()=>{$("gameover").classList.add("hidden");reset();showGame()};
+$("muteBtn").onclick=()=>{muted=!muted;store.set("with.muted",muted?"1":"0");
+  $("muteBtn").textContent=muted?"✕":"♪";muted?ambStop():(mode==="play"&&ambStart())};
+$("muteBtn").textContent=muted?"✕":"♪";
+document.addEventListener("visibilitychange",()=>{if(document.hidden&&mode==="play")$("pauseBtn").click();else last=performance.now()});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"||e.key==="p"||e.key==="P"){if(mode==="play")$("pauseBtn").click();else if(mode==="paused")$("resumeBtn").click()}
+  else if(e.key==="m"||e.key==="M")$("muteBtn").click();
+  else if(e.key==="ArrowLeft"&&mode==="meet")$("prevBtn").click();
+  else if(e.key==="ArrowRight"&&mode==="meet")$("nextBtn").click();
+  else if(e.key===" "||e.key==="Enter"){
+    if(mode==="meet")$("enterBtn").click();
+    else if(mode==="intro")$("meetBtn").click();
+    else if(mode==="inter")$("continueBtn").click();
+    else if(mode==="over")$("retryBtn").click();
+    else if(mode==="paused")$("resumeBtn").click();
+    else return;
+    e.preventDefault();
+  }
+});
+applyWorld(SIBLINGS[5]); // title screen wears Ordinary's garden
+window.addEventListener("error",ev=>{const p=$("protocol");
+  if(p){p.textContent="The garden hit a browser error: "+(ev.message||"unknown");p.className="alert"}});
+})();
+</script>
+</body>
+</html>
